@@ -1,9 +1,18 @@
 from typing import Any
-from fastapi import FastAPI, Form, Request
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import FastAPI, Form, Request, HTTPException, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from app.config import get_session
+from sqlalchemy import text
 import pandas as pd
+import logging
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 # define the app, an instance of the Fastapi() class
 app = FastAPI()
@@ -23,20 +32,46 @@ async def read_root(request: Request):
 
 
 # receive post reqs from mobile app
-
-
 @app.post("/api/receive")
-async def receive(request: Request):
-    if request:
-        try:
-            data = await request.json()
-            print(data)
-        except Exception as e:
-            print(e)
-            return f"error: {str(e)}"
-    else:
-        print("no data")
-    return "received"
+async def receive(request: Request, session: AsyncSession = Depends(get_session)):
+    try:
+        data = await request.json()
+        #logger.info(f"Received data: {data}")
+    except Exception as e:
+        logger.error(f"JSON parsing error: {e}", exc_info=True)
+        raise HTTPException(status_code=400, detail="Bad request: JSON parsing error")
+
+    try:
+        df = pd.json_normalize(data, record_path=["HeartRates"], meta=["UserID"])
+        df = df.rename(
+            columns={
+                "TimeStamp": "TIMESTAMP",
+                "HeartRate": "HEART_RATE",
+                "Steps": "STEPS",
+                "UserID": "USER_ID",
+            }
+        )
+        records = df.to_dict("records")
+    except Exception as e:
+        #logger.error(f"Data processing error: {e}", exc_info=True)
+        raise HTTPException(status_code=400, detail="Bad request: Error processing data")
+
+    query = text("""
+    INSERT IGNORE INTO MI_BAND_ACTIVITY_SAMPLE (USER_ID, TIMESTAMP, HEART_RATE, STEPS)
+    VALUES (:USER_ID, :TIMESTAMP, :HEART_RATE, :STEPS);
+    """)
+
+    try:
+        async with session.begin():  # Begin a transaction:
+            for record in records:
+                await session.execute(query, params=record)
+        await session.commit()  # Ensure to commit the transaction
+    except Exception as e:
+        #logger.error(f"Database operation error: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"An error occurred while processing the data: {str(e)}",
+        )
 
 
 @app.post("/api/drug_search", response_class=HTMLResponse)
