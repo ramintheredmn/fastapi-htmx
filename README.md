@@ -1,5 +1,7 @@
-# fastapi-pandas-htmx
-Pandas dataframe live search with fastapi and htmx
+# fastapi-htmx-alpine
+
+A fastapi backed htmx-alpine fronend for miband activity analysis, flask-react version
+is also availiale which is "www" repo
 
 # Installitaion 
 
