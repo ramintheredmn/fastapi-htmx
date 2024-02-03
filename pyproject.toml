@@ -1,2 +1,3 @@
 [tool.pyright]
 include = ["app"]
+

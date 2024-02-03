@@ -31,12 +31,24 @@ async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
+@app.post("/api/testCrude", response_class=HTMLResponse)
+async def test_crude(request: Request, session: AsyncSession = Depends(get_session)):
+    query = text("""select distinct USER_ID from MI_BAND_ACTIVITY_SAMPLE""")
+    result = await session.execute(query)
+    users = [i[0] for i in result.fetchall()]
+    print(users)
+
+    return templates.TemplateResponse(
+        "users.html", {"request": request, "users": users}
+    )
+
+
 # receive post reqs from mobile app
 @app.post("/api/receive")
 async def receive(request: Request, session: AsyncSession = Depends(get_session)):
     try:
         data = await request.json()
-        #logger.info(f"Received data: {data}")
+        # logger.info(f"Received data: {data}")
     except Exception as e:
         logger.error(f"JSON parsing error: {e}", exc_info=True)
         raise HTTPException(status_code=400, detail="Bad request: JSON parsing error")
@@ -53,13 +65,17 @@ async def receive(request: Request, session: AsyncSession = Depends(get_session)
         )
         records = df.to_dict("records")
     except Exception as e:
-        #logger.error(f"Data processing error: {e}", exc_info=True)
-        raise HTTPException(status_code=400, detail="Bad request: Error processing data")
+        # logger.error(f"Data processing error: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=400, detail=f"Bad request: Error processing data: {str(e)}"
+        )
 
-    query = text("""
+    query = text(
+        """
     INSERT IGNORE INTO MI_BAND_ACTIVITY_SAMPLE (USER_ID, TIMESTAMP, HEART_RATE, STEPS)
     VALUES (:USER_ID, :TIMESTAMP, :HEART_RATE, :STEPS);
-    """)
+    """
+    )
 
     try:
         async with session.begin():  # Begin a transaction:
@@ -67,7 +83,7 @@ async def receive(request: Request, session: AsyncSession = Depends(get_session)
                 await session.execute(query, params=record)
         await session.commit()  # Ensure to commit the transaction
     except Exception as e:
-        #logger.error(f"Database operation error: {e}", exc_info=True)
+        # logger.error(f"Database operation error: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"An error occurred while processing the data: {str(e)}",

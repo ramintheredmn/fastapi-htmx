@@ -1,0 +1,12 @@
+<!doctype html>
+{%extends "base.html"%} {% block index %}
+<div class="flex items-center justify-center p-24 w-screen h-screen">
+  <div class="w-1/2 h-1/2 flex flex-col items-center justify-center space-y-4">
+    <h1 class="text-xl">Enter the drug name</h1>
+    <input name="query" hx-post="/api/drug_search" hx-target="#search" hx-swap="innerHTML"
+      hx-trigger="keyup delay:500ms" type="text"
+      class="block w-[16rem] h-[2.5rem] p-1 ps-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+    <div id="search"></div>
+  </div>
+</div>
+{% endblock %}
