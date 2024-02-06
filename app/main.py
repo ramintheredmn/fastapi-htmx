@@ -1,11 +1,9 @@
 from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import FastAPI, Form, Request, HTTPException, Depends, status
+from fastapi import FastAPI, Form, Request, HTTPException, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from passlib.context import CryptContext
 from app.config import get_session
 from sqlalchemy import text
 import pandas as pd
@@ -25,13 +23,24 @@ templates = Jinja2Templates(directory="app/templates")
 # read the csv of medicines to access in different routs
 df = pd.read_csv(r"./app/medicine.csv")
 drugs_dict = {}
-# define the hashing algorithm
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-def authenticate_user(username: str, password: str):
-    user = {"username": username, "password": pwd_context.hash("secret")}
-    if pwd_context.verify(password, user["password"]):
-        return user
-    return None
+
+
+# define the root route, that returns the index.html
+@app.get("/", response_class=HTMLResponse)
+async def read_root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
+
+@app.post("/api/testCrude", response_class=HTMLResponse)
+async def test_crude(request: Request, session: AsyncSession = Depends(get_session)):
+    query = text("""select distinct USER_ID from MI_BAND_ACTIVITY_SAMPLE""")
+    result = await session.execute(query)
+    users = [i[0] for i in result.fetchall()]
+    print(users)
+
+    return templates.TemplateResponse(
+        "users.html", {"request": request, "users": users}
+    )
 
 
 # receive post reqs from mobile app
@@ -55,52 +64,23 @@ async def receive(request: Request, session: AsyncSession = Depends(get_session)
             }
         )
         records = df.to_dict("records")
-
-        # each request is from a unique phone so USER_ID is uniqte per request 
-        
-        user_id = records[0]["USER_ID"]
     except Exception as e:
         # logger.error(f"Data processing error: {e}", exc_info=True)
         raise HTTPException(
             status_code=400, detail=f"Bad request: Error processing data: {str(e)}"
         )
 
-
-
-        # text function is to create sql queries :VARIABLE is to define paramets 
-        # in the execute function we should give params if they are used it the text function input
-    query_check_if_existing_user_in_users_table = text(
-        """select USER_ID from users where USER_ID = :USER_ID"""
-    )
-
-    query_insert_to_table = text(
+    query = text(
         """
     INSERT IGNORE INTO MI_BAND_ACTIVITY_SAMPLE (USER_ID, TIMESTAMP, HEART_RATE, STEPS)
     VALUES (:USER_ID, :TIMESTAMP, :HEART_RATE, :STEPS);
     """
     )
-    query_insert_to_users_if_not_exist = text(
-        """INSERT INTO users (USER_ID, PASSWORD) VALUES (:USER_ID, :USER_ID)"""
-    )
-
-
-
 
     try:
         async with session.begin():  # Begin a transaction:
-            # Check if the user already exists in the users table
-            existing_user = await session.execute(
-                query_check_if_existing_user_in_users_table, params={"USER_ID": user_id}
-            )
-            # Insert the user into the users table if it doesn't exist
-            if not existing_user:
-                await session.execute(
-                    query_insert_to_users_if_not_exist,
-                    params={"USER_ID": user_id, "PASSWORD": user_id},
-                )
-            # Insert the records into the table
             for record in records:
-                await session.execute(query_insert_to_table, params=record)
+                await session.execute(query, params=record)
         await session.commit()  # Ensure to commit the transaction
     except Exception as e:
         # logger.error(f"Database operation error: {e}", exc_info=True)
@@ -110,24 +90,7 @@ async def receive(request: Request, session: AsyncSession = Depends(get_session)
         )
 
 
-
-
-
-# define the root route, that returns the index.html
-@app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
-
-
-
-
-# user form
-
-# drug activr search
-# htmx hits the /api/drug_search when each time a key is pressed and sends the search query
 @app.post("/api/drug_search", response_class=HTMLResponse)
-# query: str = Form(...) is the query that htmx sends Form tags in the html contains names and herer we can unpack that hashtable like data structure  
 async def drug_search(request: Request, query: str = Form(...)):
     filtered_df: Any = df[df["Drug Name"].str.contains(query, case=False)]
     drugs = filtered_df["Drug Name"].drop_duplicates().tolist()
