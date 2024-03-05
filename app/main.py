@@ -1,3 +1,4 @@
+from pydantic import ValidationError
 from app.drugsearch import df, drugs_dict
 from app.appstuff import app, logger, templates
 from typing import Any, Optional
@@ -7,6 +8,7 @@ from fastapi.responses import HTMLResponse
 from app.config import get_session
 from sqlalchemy import except_, text
 import pandas as pd
+from appstuff import RegistrationForm
 
 
 # receive post reqs from mobile app
@@ -150,7 +152,7 @@ async def login_info(
 @app.post("/api/register")
 async def register_info(
     password: str = Form(...),
-    username: str = Form(...),
+    user_id: str = Form(...),
     session: AsyncSession = Depends(get_session),
     sex: str = Form(...),
     name: str = Form(...),
@@ -165,22 +167,42 @@ async def register_info(
     query = text(
         "UPDATE users (PASSWORD, SEX, name, lastname, PHONE, BIRTHDATE, HEIGHT, WEIGHT, MEDICATIONS, COMORBITIDIES) VALUES (:USER_ID, :PASSWORD, :SEX, :name, :lastname, :PHONE, :BIRTHDATE, :HEIGHT, :WEIGHT, :MEDICATIONS, :COMORBITIDIES) WHERE USER_ID= :USER_ID"
     )
+
+    # caling pydantic modal to validate the data
+
+    try:
+        form_data = RegistrationForm(
+            user_id=user_id,
+            password=password,
+            sex=sex,
+            name=name,
+            lastname=lastname,
+            phone=phone,
+            birthdate=birthdate,
+            height=height,
+            weight=weight,
+            medication=medication,
+            comorbitidies=comorbitidies,
+        )
+    except ValidationError as e:
+        return {"error": str(e)}
+
     # update the user table with the new data
     async with session.begin():
         await session.execute(
             query,
             params={
-                "USER_ID": username,
-                "PASSWORD": password,
-                "SEX": sex,
-                "name": name,
-                "lastname": lastname,
-                "PHONE": phone,
-                "BIRTHDATE": birthdate,
-                "HEIGHT": height,
-                "WEIGHT": weight,
-                "MEDICATIONS": medication,
-                "COMORBITIDIES": comorbitidies,
+                "USER_ID": form_data.user_id,
+                "PASSWORD": form_data.password,
+                "SEX": form_data.sex,
+                "name": form_data.name,
+                "lastname": form_data.lastname,
+                "PHONE": form_data.phone,
+                "BIRTHDATE": form_data.birthdate,
+                "HEIGHT": form_data.height,
+                "WEIGHT": form_data.weight,
+                "MEDICATIONS": form_data.medication,
+                "COMORBITIDIES": form_data.comorbitidies,
             },
         )
     return {"message ": "registration successful"}

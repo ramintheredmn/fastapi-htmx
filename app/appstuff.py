@@ -33,7 +33,7 @@ templates = Jinja2Templates(directory="app/templates")
 # The user registrition form
 
 class RegistrationForm(BaseModel):
-    username: str
+    user_id: str
     password: str
     sex: str
     name: str
@@ -55,6 +55,6 @@ class RegistrationForm(BaseModel):
     # Validator to check if password is equal to username
     @validator('password')
     def password_not_equal_username(cls, value, values, **kwargs):
-        if 'username' in values and value == values['username']:
+        if 'user_id' in values and value == values['user_id']:
             raise ValueError('Password cannot be the same as the username')
         return value
