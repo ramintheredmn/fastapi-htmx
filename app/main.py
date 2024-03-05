@@ -1,11 +1,11 @@
 from app.drugsearch import df, drugs_dict
-from app.appstuff import app, logger, templates 
-from typing import Any
+from app.appstuff import app, logger, templates
+from typing import Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Form, Request, HTTPException, Depends
 from fastapi.responses import HTMLResponse
 from app.config import get_session
-from sqlalchemy import text
+from sqlalchemy import except_, text
 import pandas as pd
 
 
@@ -31,8 +31,8 @@ async def receive(request: Request, session: AsyncSession = Depends(get_session)
         )
         records = df.to_dict("records")
 
-        # each request is from a unique phone so USER_ID is uniqte per request 
-        
+        # each request is from a unique phone so USER_ID is uniqte per request
+
         user_id = records[0]["USER_ID"]
     except Exception as e:
         # logger.error(f"Data processing error: {e}", exc_info=True)
@@ -40,9 +40,7 @@ async def receive(request: Request, session: AsyncSession = Depends(get_session)
             status_code=400, detail=f"Bad request: Error processing data: {str(e)}"
         )
 
-
-
-        # text function is to create sql queries :VARIABLE is to define paramets 
+        # text function is to create sql queries :VARIABLE is to define paramets
         # in the execute function we should give params if they are used it the text function input
     query_check_if_existing_user_in_users_table = text(
         """select USER_ID from users where USER_ID = :USER_ID"""
@@ -57,9 +55,6 @@ async def receive(request: Request, session: AsyncSession = Depends(get_session)
     query_insert_to_users_if_not_exist = text(
         """INSERT INTO users (USER_ID, PASSWORD) VALUES (:USER_ID, :USER_ID)"""
     )
-
-
-
 
     try:
         async with session.begin():  # Begin a transaction:
@@ -85,13 +80,11 @@ async def receive(request: Request, session: AsyncSession = Depends(get_session)
         )
 
 
-
-
-
 # define the root route, that returns the index.html
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
 
 # login page defination
 @app.get("/login", response_class=HTMLResponse)
@@ -99,13 +92,120 @@ async def login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
 
+# the simple authenticaiotn just check for the avaibility of the user in the user
+# table if there, compare the password, if same the user is authenticated
+# if not return register page
+async def userinDatabase(
+    username: str, password: str, session: AsyncSession
+) -> tuple[bool, bool, int | bool]:
+    query = text("select USER_ID, PASSWORD from users")
+    async with session.begin():
+        query_result = await session.execute(query)
+        users_rows = query_result.fetchall()
+        users_tuple = [tuple(row) for row in users_rows]
+        users_dict = {username: password for username, password in users_tuple}
+
+        # begin the check for user vaibility and user pass equality
+
+        try:
+            if username in users_dict and username == users_dict[username]:
+                # this means that the user visits the website for the first time
+                return True, True, 0
+            elif (
+                username in users_dict
+                and username != users_dict[username]
+                and password == users_dict[username]
+            ):
+                # this means that the user is in the database and has setten a passerd
+                return True, True, True
+            else:
+                return False, False, False
+        except Exception as e:
+            raise HTTPException(
+                status_code=404,
+                detail=f"یوزد آیدی در دیتابیس وجود ندارد: {str(e)}",
+            )
+
+
+@app.post("/api/login_info")
+async def login_info(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    session: AsyncSession = Depends(get_session),
+):
+    user = await userinDatabase(username, password, session)
+
+    if user == (True, True, True):
+        return {"message ": "login successful"}
+    if user == (True, True, 0):
+        return templates.TemplateResponse(
+            "register.html", {"request": request, "username": username}
+        )
+    if user == (False, False, False):
+        return {"message ": "login failed"}
+
 
 # user form
+@app.post("/api/register")
+async def register_info(
+    password: str = Form(...),
+    username: str = Form(...),
+    session: AsyncSession = Depends(get_session),
+    sex: str = Form(...),
+    name: str = Form(...),
+    lastname: str = Form(...),
+    phone: str = Form(...),
+    birthdate: str = Form(...),
+    height: str = Form(...),
+    weight: str = Form(...),
+    medication: str | None = Form(None),
+    comorbitidies: str | None = Form(None),
+):  # username from the login form
+    query = text(
+        "UPDATE users (PASSWORD, SEX, name, lastname, PHONE, BIRTHDATE, HEIGHT, WEIGHT, MEDICATIONS, COMORBITIDIES) VALUES (:USER_ID, :PASSWORD, :SEX, :name, :lastname, :PHONE, :BIRTHDATE, :HEIGHT, :WEIGHT, :MEDICATIONS, :COMORBITIDIES) WHERE USER_ID= :USER_ID"
+    )
+    # update the user table with the new data
+    async with session.begin():
+        await session.execute(
+            query,
+            params={
+                "USER_ID": username,
+                "PASSWORD": password,
+                "SEX": sex,
+                "name": name,
+                "lastname": lastname,
+                "PHONE": phone,
+                "BIRTHDATE": birthdate,
+                "HEIGHT": height,
+                "WEIGHT": weight,
+                "MEDICATIONS": medication,
+                "COMORBITIDIES": comorbitidies,
+            },
+        )
+    return {"message ": "registration successful"}
+
+
+# +---------------+-------------+------+-----+---------+-------+
+# | Field         | Type        | Null | Key | Default | Extra |
+# +---------------+-------------+------+-----+---------+-------+
+# | USER_ID       | varchar(10) | NO   | MUL | NULL    |       |
+# | PASSWORD      | varchar(20) | NO   |     | NULL    |       |
+# | BIRTHDATE     | varchar(20) | YES  |     | NULL    |       |
+# | HEIGHT        | varchar(3)  | YES  |     | NULL    |       |
+# | WEIGHT        | varchar(3)  | YES  |     | NULL    |       |
+# | MEDICATIONS   | json        | YES  |     | NULL    |       |
+# | COMORBIDITIES | json        | YES  |     | NULL    |       |
+# | name          | varchar(20) | YES  |     | NULL    |       |
+# | lastname      | varchar(20) | YES  |     | NULL    |       |
+# | SEX           | int         | YES  |     | NULL    |       |
+# +---------------+-------------+------+-----+---------+-------+
+
 
 # drug activr search
 # htmx hits the /api/drug_search when each time a key is pressed and sends the search query
 @app.post("/api/drug_search", response_class=HTMLResponse)
-# query: str = Form(...) is the query that htmx sends Form tags in the html contains names and herer we can unpack that hashtable like data structure  
+# query: str = Form(...) is the query that htmx sends Form tags in the html contains names and herer we can unpack that hashtable like data structure
 async def drug_search(request: Request, query: str = Form(...)):
     filtered_df: Any = df[df["Drug Name"].str.contains(query, case=False)]
     drugs = filtered_df["Drug Name"].drop_duplicates().tolist()
