@@ -35,11 +35,10 @@ templates = Jinja2Templates(directory="app/templates")
 class RegistrationForm(BaseModel):
     user_id: str
     password: str
-    sex: str
+    sex: int
     name: str
     lastname: str
-    phone: str
-    birthdate: str
+    birthdate: int
     height: str
     weight: str
     medication: Optional[str] = None
@@ -58,3 +57,13 @@ class RegistrationForm(BaseModel):
         if 'user_id' in values and value == values['user_id']:
             raise ValueError('Password cannot be the same as the username')
         return value
+
+
+# sign in validation
+
+class SinginForm(BaseModel): 
+    user_id: str
+    password: str
+
+
+

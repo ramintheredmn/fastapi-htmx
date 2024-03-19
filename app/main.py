@@ -1,14 +1,21 @@
+from re import template
+from uuid import uuid4
 from pydantic import ValidationError
 from app.drugsearch import df, drugs_dict
-from app.appstuff import app, logger, templates
-from typing import Any, Optional
+from app.models import app, logger, templates, RegistrationForm
+from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Form, Request, HTTPException, Depends
+from fastapi import Form, Request, HTTPException, Depends, APIRouter, Body, status
+import random
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import HTMLResponse
 from app.config import get_session
-from sqlalchemy import except_, text
+from sqlalchemy import text
 import pandas as pd
-from appstuff import RegistrationForm
+
+# sessions in-memmory database that will contain session-id and user_id of the user that is signed-in
+
+sessions = {}
 
 
 # receive post reqs from mobile app
@@ -35,7 +42,7 @@ async def receive(request: Request, session: AsyncSession = Depends(get_session)
 
         # each request is from a unique phone so USER_ID is uniqte per request
 
-        user_id = records[0]["USER_ID"]
+        # user_id = records[0]["USER_ID"]
     except Exception as e:
         # logger.error(f"Data processing error: {e}", exc_info=True)
         raise HTTPException(
@@ -44,9 +51,9 @@ async def receive(request: Request, session: AsyncSession = Depends(get_session)
 
         # text function is to create sql queries :VARIABLE is to define paramets
         # in the execute function we should give params if they are used it the text function input
-    query_check_if_existing_user_in_users_table = text(
-        """select USER_ID from users where USER_ID = :USER_ID"""
-    )
+    # query_check_if_existing_user_in_users_table = text(
+    #     """select USER_ID from users where USER_ID = :USER_ID"""
+    # )
 
     query_insert_to_table = text(
         """
@@ -54,22 +61,22 @@ async def receive(request: Request, session: AsyncSession = Depends(get_session)
     VALUES (:USER_ID, :TIMESTAMP, :HEART_RATE, :STEPS);
     """
     )
-    query_insert_to_users_if_not_exist = text(
-        """INSERT INTO users (USER_ID, PASSWORD) VALUES (:USER_ID, :USER_ID)"""
-    )
+    # query_insert_to_users_if_not_exist = text(
+    #     """INSERT INTO users (USER_ID, PASSWORD) VALUES (:USER_ID, :USER_ID)"""
+    # )
 
     try:
         async with session.begin():  # Begin a transaction:
             # Check if the user already exists in the users table
-            existing_user = await session.execute(
-                query_check_if_existing_user_in_users_table, params={"USER_ID": user_id}
-            )
-            # Insert the user into the users table if it doesn't exist
-            if not existing_user:
-                await session.execute(
-                    query_insert_to_users_if_not_exist,
-                    params={"USER_ID": user_id, "PASSWORD": user_id},
-                )
+            # existing_user = await session.execute(
+            #     query_check_if_existing_user_in_users_table, params={"USER_ID": user_id}
+            # )
+            # # Insert the user into the users table if it doesn't exist
+            # if not existing_user:
+            #     await session.execute(
+            #         query_insert_to_users_if_not_exist,
+            #         params={"USER_ID": user_id, "PASSWORD": user_id},
+            #     )
             # Insert the records into the table
             for record in records:
                 await session.execute(query_insert_to_table, params=record)
@@ -88,64 +95,91 @@ async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
+
+
+########################################################## LOGIN #########################
+
+
 # login page defination
 @app.get("/login", response_class=HTMLResponse)
 async def login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
+async def extract_bulk_user_ids(session: AsyncSession) -> list:
+    query = text("select distinct USER_ID from MI_BAND_ACTIVITY_SAMPLE")
+    async with session.begin():
+        query_result = await session.execute(query)
+        bulk_userids = [str(tuple(buid)[0]) for buid in query_result.fetchall()]
+        print(bulk_userids, type(bulk_userids[0]))
+    return bulk_userids
 
 # the simple authenticaiotn just check for the avaibility of the user in the user
 # table if there, compare the password, if same the user is authenticated
 # if not return register page
-async def userinDatabase(
-    username: str, password: str, session: AsyncSession
-) -> tuple[bool, bool, int | bool]:
-    query = text("select USER_ID, PASSWORD from users")
-    async with session.begin():
-        query_result = await session.execute(query)
-        users_rows = query_result.fetchall()
-        users_tuple = [tuple(row) for row in users_rows]
-        users_dict = {username: password for username, password in users_tuple}
-
-        # begin the check for user vaibility and user pass equality
-
-        try:
-            if username in users_dict and username == users_dict[username]:
-                # this means that the user visits the website for the first time
-                return True, True, 0
-            elif (
-                username in users_dict
-                and username != users_dict[username]
-                and password == users_dict[username]
-            ):
-                # this means that the user is in the database and has setten a passerd
-                return True, True, True
-            else:
-                return False, False, False
-        except Exception as e:
-            raise HTTPException(
-                status_code=404,
-                detail=f"یوزد آیدی در دیتابیس وجود ندارد: {str(e)}",
-            )
 
 
-@app.post("/api/login_info")
-async def login_info(
-    request: Request,
-    username: str = Form(...),
-    password: str = Form(...),
+async def AuthenticateuserinDatabase(
+    form_data: dict,
     session: AsyncSession = Depends(get_session),
 ):
-    user = await userinDatabase(username, password, session)
+    username = form_data["username"]
+    password = form_data["password"]
 
-    if user == (True, True, True):
-        return {"message ": "login successful"}
-    if user == (True, True, 0):
-        return templates.TemplateResponse(
-            "register.html", {"request": request, "username": username}
+
+    buids = await extract_bulk_user_ids(session)
+
+    query = text("SELECT ID, USER_ID, PASSWORD FROM users WHERE USER_ID = :username")
+    if username in buids:
+        print("userid", username)
+        async with session.begin():
+            query_result = await session.execute(query, params={"username": username})
+            user_row = query_result.fetchone()
+            print("user_roww", user_row)
+            if user_row is None:
+                # If user not found in users table, raise an exception
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="User not found",
+                    headers={"WWW-Authenticate": "Basic"},
+                )
+            user_id, user_username, user_password = user_row
+            if password != user_password:
+                # If password does not match, raise an exception
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid credentials",
+                    headers={"WWW-Authenticate": "Basic"},
+                )
+            return{'id': user_id, 'username': user_username}
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not in the band database",
+            headers={"WWW-Authenticate": "Basic"}
         )
-    if user == (False, False, False):
-        return {"message ": "login failed"}
+
+
+
+def create_session(user_id: str) -> str:
+    session_id = str(uuid4())
+    sessions[session_id] = user_id
+    return session_id
+
+
+async def form_data(username: str = Form(...), password: str = Form(...)):
+    return {"username": username, "password": password}
+
+
+
+@app.post("/api/login_info", response_class=HTMLResponse)
+async def login_info(request: Request, form_data: dict = Depends(form_data), session: AsyncSession = Depends(get_session)):
+    user = await AuthenticateuserinDatabase(session=session, form_data=form_data)
+    if not user:
+        return templates.TemplateResponse("register.html", {"request": request})
+        
+    session_id = create_session(user["id"])
+
+    return {"message": "Logged in successfully", "session_id": session_id}
 
 
 # user form
@@ -154,18 +188,17 @@ async def register_info(
     password: str = Form(...),
     user_id: str = Form(...),
     session: AsyncSession = Depends(get_session),
-    sex: str = Form(...),
+    sex: int = Form(...),
     name: str = Form(...),
     lastname: str = Form(...),
-    phone: str = Form(...),
-    birthdate: str = Form(...),
+    birthdate: int = Form(...),
     height: str = Form(...),
     weight: str = Form(...),
     medication: str | None = Form(None),
     comorbitidies: str | None = Form(None),
 ):  # username from the login form
     query = text(
-        "UPDATE users (PASSWORD, SEX, name, lastname, PHONE, BIRTHDATE, HEIGHT, WEIGHT, MEDICATIONS, COMORBITIDIES) VALUES (:USER_ID, :PASSWORD, :SEX, :name, :lastname, :PHONE, :BIRTHDATE, :HEIGHT, :WEIGHT, :MEDICATIONS, :COMORBITIDIES) WHERE USER_ID= :USER_ID"
+        "INSERT INTO users (USER_ID ,PASSWORD, SEX, name, lastname, BIRTHDATE, HEIGHT, WEIGHT, MEDICATIONS, COMORBIDITIES) VALUES (:USER_ID, :PASSWORD, :SEX, :name, :lastname, :BIRTHDATE, :HEIGHT, :WEIGHT, :MEDICATIONS, :COMORBITIDIES)"
     )
 
     # caling pydantic modal to validate the data
@@ -177,7 +210,6 @@ async def register_info(
             sex=sex,
             name=name,
             lastname=lastname,
-            phone=phone,
             birthdate=birthdate,
             height=height,
             weight=weight,
@@ -197,7 +229,6 @@ async def register_info(
                 "SEX": form_data.sex,
                 "name": form_data.name,
                 "lastname": form_data.lastname,
-                "PHONE": form_data.phone,
                 "BIRTHDATE": form_data.birthdate,
                 "HEIGHT": form_data.height,
                 "WEIGHT": form_data.weight,
@@ -205,6 +236,7 @@ async def register_info(
                 "COMORBITIDIES": form_data.comorbitidies,
             },
         )
+        await session.commit()
     return {"message ": "registration successful"}
 
 
