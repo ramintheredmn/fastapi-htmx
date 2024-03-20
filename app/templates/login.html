@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %} ورود {% endblock %}
+
+{% block content %}
+
+<div id="main" dir="rtl">
+  <h2>ورود</h2>
+  <form hx-post="/api/login_info" hx-include-header hx-target="main" hx-swap="outerHTML">
+    <div>
+      <label for="username">یوزر آیدی</label>
+      <input name="username" id="username" type="text" required>
+    </div>
+    <div>
+      <label for="password">رمز عبور</label>
+      <input name="password" id="password" type="text" required>
+    </div>
+    <button type="submit">ورود</button>
+  </form>
+</div>
+
+
+{% endblock %}

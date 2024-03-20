@@ -18,18 +18,6 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 # define the templates dir
 templates = Jinja2Templates(directory="app/templates")
-# define the hashing algorithm
-# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-# def authenticate_user(username: str, password: str):
-#     user = {"username": username, "password": pwd_context.hash("secret")}
-#     if pwd_context.verify(password, user["password"]):
-#         return user
-#     return None
-# for now just simple athentication withiot hashing
-
-
-
-# HERE the pydantic schemas for validation begins
 # The user registrition form
 
 class RegistrationForm(BaseModel):
@@ -62,7 +50,7 @@ class RegistrationForm(BaseModel):
 # sign in validation
 
 class SinginForm(BaseModel): 
-    user_id: str
+    username: str
     password: str
 
 

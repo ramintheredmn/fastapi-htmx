@@ -2,12 +2,10 @@ from re import template
 from uuid import uuid4
 from pydantic import ValidationError
 from app.drugsearch import df, drugs_dict
-from app.models import app, logger, templates, RegistrationForm
-from typing import Any
+from app.models import app, logger, templates, RegistrationForm, SinginForm
+from typing import Any, Annotated
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Form, Request, HTTPException, Depends, APIRouter, Body, status
-import random
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import Form, Request, HTTPException, Depends, APIRouter, Body, status, Cookie
 from fastapi.responses import HTMLResponse
 from app.config import get_session
 from sqlalchemy import text
@@ -122,8 +120,9 @@ async def AuthenticateuserinDatabase(
     form_data: dict,
     session: AsyncSession = Depends(get_session),
 ):
-    username = form_data["username"]
-    password = form_data["password"]
+    print(form_data, type(form_data))
+    username = form_data['username']
+    password = form_data['password']
 
 
     buids = await extract_bulk_user_ids(session)
@@ -163,15 +162,17 @@ async def AuthenticateuserinDatabase(
 def create_session(user_id: str) -> str:
     session_id = str(uuid4())
     sessions[session_id] = user_id
+    # print("session_id", session_id)
     return session_id
 
 
 async def form_data(username: str = Form(...), password: str = Form(...)):
-    return {"username": username, "password": password}
+    form_data = SinginForm(username=username, password=password)
+    return {"username": form_data.username, "password": form_data.password}
 
 
 
-@app.post("/api/login_info", response_class=HTMLResponse)
+@app.post("/api/login_info")
 async def login_info(request: Request, form_data: dict = Depends(form_data), session: AsyncSession = Depends(get_session)):
     user = await AuthenticateuserinDatabase(session=session, form_data=form_data)
     if not user:
@@ -180,6 +181,11 @@ async def login_info(request: Request, form_data: dict = Depends(form_data), ses
     session_id = create_session(user["id"])
 
     return {"message": "Logged in successfully", "session_id": session_id}
+
+@app.get("/users/me")
+def getuser(session_id: str = Cookie(default=None)):
+    return {"Your username ": sessions[session_id]}
+
 
 
 # user form
