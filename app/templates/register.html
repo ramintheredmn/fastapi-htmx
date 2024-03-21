@@ -1,16 +1,77 @@
-{% exends 'base.html'%}
+{% extends 'base.html'%}
 
 {% block title %} ثیت نام {% endblock %}
 
 
 {% block content %}
-<div id="register">
-  <form>
-    <label for="user_id">نام کاربری</label>
-    <input type="text" name="username" disabled value="{{username}}" id="user_id" />
-    <label for="password">رمز عبور</label>
-    <input name="password">
-    <label for="" </form>
+
+<div id="register" dir="rtl" class="bg-gray-50 min-h-screen flex justify-center items-center">
+  <form class="w-full max-w-lg bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4" hx-post="/api/register"
+    hx-target="register">
+    <div class="mb-4">
+      <label for="user_id" class="block text-gray-700 text-sm font-bold mb-2">نام کاربری</label>
+      <input type="text" name="username" disabled value="{{username}}" id="user_id"
+        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+    </div>
+    <div class="mb-4">
+      <label for="password" class="block text-gray-700 text-sm font-bold mb-2">رمز عبور</label>
+      <input name="password" placeholder="رمز"
+        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline">
+    </div>
+    <div class="mb-4">
+      <label for="name" class="block text-gray-700 text-sm font-bold mb-2">نام</label>
+      <input type="text" name="name"
+        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+    </div>
+    <div class="mb-4">
+      <label for="lastname" class="block text-gray-700 text-sm font-bold mb-2">نام خانوادگی</label>
+      <input type="text" name="lastname"
+        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+    </div>
+    <fieldset class="mb-4">
+      <legend class="text-gray-700 text-sm font-bold mb-2">جنسیت</legend>
+      <div class="flex items-center mb-4">
+        <label class="inline-flex items-center">
+          <input type="radio" name="gender" value="1" class="form-radio text-indigo-600">
+          <span class="ml-2">مرد</span>
+        </label>
+      </div>
+      <div class="flex items-center mb-4">
+        <label class="inline-flex items-center">
+          <input type="radio" name="gender" value="2" class="form-radio text-pink-600">
+          <span class="ml-2">زن</span>
+        </label>
+      </div>
+      <div class="flex items-center mb-4">
+        <label class="inline-flex items-center">
+          <input type="radio" name="gender" value="0" class="form-radio text-gray-600">
+          <span class="ml-2">دیگر</span>
+        </label>
+      </div>
+    </fieldset>
+    <div class="mb-4">
+      <label for="date" class="block text-gray-700 text-sm font-bold mb-2">تاریخ تولد</label>
+      <input name="date" type="text" data-jdp
+        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+    </div>
+    <div class="mb-4">
+      <label for="height" class="block text-gray-700 text-sm font-bold mb-2">قد به سانتی متر</label>
+      <input name="height" type="text" id="height" placeholder="قد"
+        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+    </div>
+    <div class="mb-4">
+      <label for="weight" class="block text-gray-700 text-sm font-bold mb-2">وزن به کیلوگرم</label>
+      <input type="text" name="weight"
+        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+    </div>
+    <div class="flex items-center justify-between">
+      <button
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        type="submit">
+        ثبت نام
+      </button>
+    </div>
+  </form>
 </div>
 
 

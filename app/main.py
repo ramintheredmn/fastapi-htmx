@@ -153,12 +153,12 @@ async def login_info(form_data: dict = Depends(form_data), session: AsyncSession
         return RedirectResponse("/Usernotfound/" + user["username"], status_code=404)
     session_id = create_session(user["id"])
 
-    return RedirectResponse("/users/" + user["username"] + "/" + session_id, status_code=301)
+    return RedirectResponse("/users/" + user["username"] + "?session_id=" + session_id, status_code=302) # ?session_id=" + session_id", status_code=301)
 
 
 
 # route to user dashboard
-@app.get("/users/{username}/{session_id}", response_class=HTMLResponse)
+@app.get("/users/{username}", response_class=HTMLResponse)
 def getuser(request: Request, username: str ,session_id: Annotated[str | None, Cookie()]):
     return templates.TemplateResponse("Dashboard.html", {"request": request, "user": {"username": username, "usersession": session_id}})
 
@@ -177,7 +177,7 @@ async def register(request: Request, username: str):
 @app.post("/api/register")
 async def register_info(
     password: str = Form(...),
-    user_id: str = Form(...),
+    username: str = Form(...),
     session: AsyncSession = Depends(get_session),
     sex: int = Form(...),
     name: str = Form(...),
@@ -189,14 +189,14 @@ async def register_info(
     comorbitidies: str | None = Form(None),
 ):  # username from the login form
     query = text(
-        "INSERT INTO users (USER_ID ,PASSWORD, SEX, name, lastname, BIRTHDATE, HEIGHT, WEIGHT, MEDICATIONS, COMORBIDITIES) VALUES (:USER_ID, :PASSWORD, :SEX, :name, :lastname, :BIRTHDATE, :HEIGHT, :WEIGHT, :MEDICATIONS, :COMORBITIDIES)"
+        "INSERT INTO users (USER_ID ,PASSWORD, SEX, name, lastname, BIRTHDATE, HEIGHT, WEIGHT, MEDICATIONS, COMORBIDITIES) VALUES (:USERNAME, :PASSWORD, :SEX, :name, :lastname, :BIRTHDATE, :HEIGHT, :WEIGHT, :MEDICATIONS, :COMORBITIDIES)"
     )
 
     # caling pydantic modal to validate the data
 
     try:
         form_data = RegistrationForm(
-            user_id=user_id,
+            user_id=username,
             password=password,
             sex=sex,
             name=name,
@@ -215,7 +215,7 @@ async def register_info(
         await session.execute(
             query,
             params={
-                "USER_ID": form_data.user_id,
+                "USERNAME": form_data.user_id,
                 "PASSWORD": form_data.password,
                 "SEX": form_data.sex,
                 "name": form_data.name,
