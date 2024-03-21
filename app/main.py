@@ -1,4 +1,3 @@
-from re import template
 from uuid import uuid4
 from pydantic import ValidationError
 from app.drugsearch import df, drugs_dict
@@ -132,19 +131,19 @@ async def AuthenticateuserinDatabase(
         )
 
 
-
+# create session id with uuid
 def create_session(user_id: str) -> str:
     session_id = str(uuid4())
     sessions[session_id] = user_id
     return session_id
 
-
+# helper function for login form data 
 async def form_data(username: str = Form(...), password: str = Form(...)):
     form_data = SinginForm(username=username, password=password)
     return {"username": form_data.username, "password": form_data.password}
 
 
-
+# post route for recevieng post reqs to login and further routing
 @app.post("/api/login_info", response_class=HTMLResponse)
 async def login_info(request: Request, form_data: dict = Depends(form_data), session: AsyncSession = Depends(get_session)):
     user = await AuthenticateuserinDatabase(session=session, form_data=form_data)
@@ -156,6 +155,9 @@ async def login_info(request: Request, form_data: dict = Depends(form_data), ses
 
     return templates.TemplateResponse("Dashboard.html", {"request": request, "session_id": session_id})
 
+
+
+# route to user dashboard
 @app.get("/users/me")
 def getuser(session_id: str = Cookie(default=None)):
     return {"Your username ": sessions[session_id]}
