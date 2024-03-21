@@ -1,3 +1,4 @@
+from re import template
 from uuid import uuid4
 from pydantic import ValidationError
 from app.drugsearch import df, drugs_dict
@@ -5,7 +6,7 @@ from app.models import app, logger, templates, RegistrationForm, SinginForm
 from typing import Any, Annotated
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Form, Request, HTTPException, Depends, APIRouter, Body, status, Cookie
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from app.config import get_session
 from sqlalchemy import text
 import pandas as pd
@@ -13,7 +14,6 @@ import pandas as pd
 # sessions in-memmory database that will contain session-id and user_id of the user that is signed-in
 
 sessions = {}
-
 
 # receive post reqs from mobile app
 @app.post("/api/receive")
@@ -144,25 +144,34 @@ async def form_data(username: str = Form(...), password: str = Form(...)):
 
 
 # post route for recevieng post reqs to login and further routing
-@app.post("/api/login_info", response_class=HTMLResponse)
-async def login_info(request: Request, form_data: dict = Depends(form_data), session: AsyncSession = Depends(get_session)):
+@app.post("/api/login_info")
+async def login_info(form_data: dict = Depends(form_data), session: AsyncSession = Depends(get_session)):
     user = await AuthenticateuserinDatabase(session=session, form_data=form_data)
     if not user["id"]:
-        return templates.TemplateResponse("register.html", {"request": request, "username": user["username"]})
+        return RedirectResponse("/register/"+ user["username"], status_code=302)
     if not user:
-        return templates.TemplateResponse("Notfound.html", {"request": request})
+        return RedirectResponse("/Usernotfound/" + user["username"], status_code=404)
     session_id = create_session(user["id"])
 
-    return templates.TemplateResponse("Dashboard.html", {"request": request, "session_id": session_id})
+    return RedirectResponse("/users/" + user["username"] + "/" + session_id, status_code=301)
 
 
 
 # route to user dashboard
-@app.get("/users/me")
-def getuser(session_id: str = Cookie(default=None)):
-    return {"Your username ": sessions[session_id]}
+@app.get("/users/{username}/{session_id}", response_class=HTMLResponse)
+def getuser(request: Request, username: str ,session_id: Annotated[str | None, Cookie()]):
+    return templates.TemplateResponse("Dashboard.html", {"request": request, "user": {"username": username, "usersession": session_id}})
 
 
+# user not found
+@app.get("/Usernotfound/{username}")
+def notfound(username, request: Request):
+    return templates.TemplateResponse("Notfound.html", {"request": request, "uesername": username})
+
+# register the user that has user_id in the btable
+@app.get("/register/{username}", response_class=HTMLResponse)
+async def register(request: Request, username: str):
+    return templates.TemplateResponse("register.html", {"request": request, "username": username})
 
 # user form
 @app.post("/api/register")
