@@ -47,11 +47,6 @@ async def receive(request: Request, session: AsyncSession = Depends(get_session)
             status_code=400, detail=f"Bad request: Error processing data: {str(e)}"
         )
 
-        # text function is to create sql queries :VARIABLE is to define paramets
-        # in the execute function we should give params if they are used it the text function input
-    # query_check_if_existing_user_in_users_table = text(
-    #     """select USER_ID from users where USER_ID = :USER_ID"""
-    # )
 
     query_insert_to_table = text(
         """
@@ -59,23 +54,9 @@ async def receive(request: Request, session: AsyncSession = Depends(get_session)
     VALUES (:USER_ID, :TIMESTAMP, :HEART_RATE, :STEPS);
     """
     )
-    # query_insert_to_users_if_not_exist = text(
-    #     """INSERT INTO users (USER_ID, PASSWORD) VALUES (:USER_ID, :USER_ID)"""
-    # )
 
     try:
         async with session.begin():  # Begin a transaction:
-            # Check if the user already exists in the users table
-            # existing_user = await session.execute(
-            #     query_check_if_existing_user_in_users_table, params={"USER_ID": user_id}
-            # )
-            # # Insert the user into the users table if it doesn't exist
-            # if not existing_user:
-            #     await session.execute(
-            #         query_insert_to_users_if_not_exist,
-            #         params={"USER_ID": user_id, "PASSWORD": user_id},
-            #     )
-            # Insert the records into the table
             for record in records:
                 await session.execute(query_insert_to_table, params=record)
         await session.commit()  # Ensure to commit the transaction
@@ -120,7 +101,6 @@ async def AuthenticateuserinDatabase(
     form_data: dict,
     session: AsyncSession = Depends(get_session),
 ):
-    print(form_data, type(form_data))
     username = form_data['username']
     password = form_data['password']
 
@@ -129,18 +109,12 @@ async def AuthenticateuserinDatabase(
 
     query = text("SELECT ID, USER_ID, PASSWORD FROM users WHERE USER_ID = :username")
     if username in buids:
-        print("userid", username)
         async with session.begin():
             query_result = await session.execute(query, params={"username": username})
             user_row = query_result.fetchone()
-            print("user_roww", user_row)
             if user_row is None:
                 # If user not found in users table, raise an exception
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="User not found",
-                    headers={"WWW-Authenticate": "Basic"},
-                )
+                return {"id": None, "username": username}
             user_id, user_username, user_password = user_row
             if password != user_password:
                 # If password does not match, raise an exception
@@ -162,7 +136,6 @@ async def AuthenticateuserinDatabase(
 def create_session(user_id: str) -> str:
     session_id = str(uuid4())
     sessions[session_id] = user_id
-    # print("session_id", session_id)
     return session_id
 
 
@@ -172,15 +145,16 @@ async def form_data(username: str = Form(...), password: str = Form(...)):
 
 
 
-@app.post("/api/login_info")
+@app.post("/api/login_info", response_class=HTMLResponse)
 async def login_info(request: Request, form_data: dict = Depends(form_data), session: AsyncSession = Depends(get_session)):
     user = await AuthenticateuserinDatabase(session=session, form_data=form_data)
+    if not user["id"]:
+        return templates.TemplateResponse("register.html", {"request": request, "username": user["username"]})
     if not user:
-        return templates.TemplateResponse("register.html", {"request": request})
-        
+        return templates.TemplateResponse("Notfound.html", {"request": request})
     session_id = create_session(user["id"])
 
-    return {"message": "Logged in successfully", "session_id": session_id}
+    return templates.TemplateResponse("Dashboard.html", {"request": request, "session_id": session_id})
 
 @app.get("/users/me")
 def getuser(session_id: str = Cookie(default=None)):
