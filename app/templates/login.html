@@ -6,16 +6,19 @@
 
 <div id="main" dir="rtl">
   <h2>ورود</h2>
-  <form hx-post="/api/login_info" hx-include-header hx-target="main" hx-swap="outerHTML">
+  <form action="/api/login_info" method="post" class="flex flex-col items-center justify-center">
     <div>
       <label for="username">یوزر آیدی</label>
-      <input name="username" id="username" type="text" required>
+      <input name="username" id="username" type="text" required class="border border-black">
     </div>
     <div>
       <label for="password">رمز عبور</label>
-      <input name="password" id="password" type="text" required>
+      <input name="password" id="password" type="text" required class="border border-black">
     </div>
-    <button type="submit">ورود</button>
+    <div class="flex items-center justify-center">
+
+      <button type="submit" class="border border-black">ورود</button>
+    </div>
   </form>
 </div>
 

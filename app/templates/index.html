@@ -1,7 +1,11 @@
 {% extends "base.html" %}
-{% block index %}
-<button hx-post="/api/testCrude" hx-target="#index" hx-swap="innerHTML">click</button>
+{% block content %}
+
+<div id="mainindex" class="h-screen w-screen flex items-center justify-center py-3 px-3">
+  <a id="welcome" href="/login">خوش آمدید لطفا وارد شوید</a>
+</div>
 
 
- <div id="index">HERE WILL BE SWAPED</div>
+
+
 {% endblock %}

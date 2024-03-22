@@ -1,11 +1,10 @@
-from re import template
 from uuid import uuid4
 from pydantic import ValidationError
 from app.drugsearch import df, drugs_dict
 from app.models import app, logger, templates, RegistrationForm, SinginForm
 from typing import Any, Annotated
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Form, Request, HTTPException, Depends, APIRouter, Body, status, Cookie
+from fastapi import Form, Request, HTTPException, Depends, APIRouter, Body, status, Cookie, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from app.config import get_session
 from sqlalchemy import text
@@ -146,15 +145,31 @@ async def form_data(username: str = Form(...), password: str = Form(...)):
 # post route for recevieng post reqs to login and further routing
 @app.post("/api/login_info")
 async def login_info(form_data: dict = Depends(form_data), session: AsyncSession = Depends(get_session)):
-    user = await AuthenticateuserinDatabase(session=session, form_data=form_data)
-    if not user["id"]:
-        return RedirectResponse("/register/"+ user["username"], status_code=302)
-    if not user:
-        return RedirectResponse("/Usernotfound/" + user["username"], status_code=404)
-    session_id = create_session(user["id"])
+    try:
+        user = await AuthenticateuserinDatabase(session=session, form_data=form_data)
+        print(user)
+        if not user["id"]:
+            return RedirectResponse(url="/register/"+ user["username"], status_code=status.HTTP_302_FOUND)
+        
 
-    return RedirectResponse("/users/" + user["username"] + "?session_id=" + session_id, status_code=302) # ?session_id=" + session_id", status_code=301)
 
+        session_id = create_session(user["id"])
+
+        # Create a response object for setting a cookie
+        response = RedirectResponse(url="/users/" + user["username"], status_code=status.HTTP_302_FOUND)
+        # Set the session_id in a cookie
+        response.set_cookie(key="session_id", value=session_id, httponly=True, max_age=3 * 3600)  # httponly=True is recommended for security
+
+        return response
+    except HTTPException:
+        return RedirectResponse(url="/notfound/" + form_data["username"], status_code=status.HTTP_302_FOUND)
+
+
+# usernotfound page
+
+@app.get("/Usernotfound/{user}", response_class=HTMLResponse)
+async def usernotfound(request: Request, user: str):
+    return templates.TemplateResponse("Notfound.html", {"request": request, "user": user})
 
 
 # route to user dashboard
@@ -163,10 +178,30 @@ def getuser(request: Request, username: str ,session_id: Annotated[str | None, C
     return templates.TemplateResponse("Dashboard.html", {"request": request, "user": {"username": username, "usersession": session_id}})
 
 
+# logout route
+
+
+@app.get("/logout", response_class=HTMLResponse)
+async def logout(response: Response, session_id: Annotated[str | None, Cookie()]):
+    # Delete the session server-side as before
+
+    if session_id and session_id in sessions:
+        del sessions[session_id]
+    
+    # Clear the session cookie client-side
+    response.delete_cookie(key="session_id")
+    
+    # return HTML content to swap and elemnt using htmx
+    return """<div>با موفقیت خارج شدید. <a href="/login">دوباره وارد شوید</a></div>"""
+
 # user not found
-@app.get("/Usernotfound/{username}")
-def notfound(username, request: Request):
+@app.get("/notfound/{username}", response_class=HTMLResponse)
+def notfound(username: str, request: Request):
     return templates.TemplateResponse("Notfound.html", {"request": request, "uesername": username})
+
+
+
+
 
 # register the user that has user_id in the btable
 @app.get("/register/{username}", response_class=HTMLResponse)
