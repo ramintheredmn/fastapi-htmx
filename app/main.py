@@ -118,14 +118,17 @@ async def AuthenticateuserinDatabase(
                 # If password does not match, raise an exception
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid credentials",
+                    detail="رمز عبور برای این نام کاربری صحیح نیست",
                     headers={"WWW-Authenticate": "Basic"},
                 )
             return{'id': user_id, 'username': user_username}
     else:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not in the band database",
+            detail=''' 
+  هنوز وارد اپلیکیشن نشده اید ، لطفا بعد از نصب اپلیکیشن و وارد کردن یوزد آیدی از اتصال انیترنت و بولتوث بند و گوشی خود
+  اطمینان حاصل کرده وارد شوید تا به صفحه ثبت نام هدایت شوید
+            ''',
             headers={"WWW-Authenticate": "Basic"}
         )
 
@@ -143,26 +146,37 @@ async def form_data(username: str = Form(...), password: str = Form(...)):
 
 
 # post route for recevieng post reqs to login and further routing
-@app.post("/api/login_info")
-async def login_info(form_data: dict = Depends(form_data), session: AsyncSession = Depends(get_session)):
+@app.post("/api/login_info", response_class=HTMLResponse)
+async def login_info(response: Response, form_data: dict = Depends(form_data), session: AsyncSession = Depends(get_session)):
     try:
         user = await AuthenticateuserinDatabase(session=session, form_data=form_data)
         print(user)
         if not user["id"]:
-            return RedirectResponse(url="/register/"+ user["username"], status_code=status.HTTP_302_FOUND)
+
+# to have a redircet response client-side with htmx 'Hx-Redirect' should be in the header of the response from
+            # the server, otherwise the client will behave with as a normal htmx respnse and swap an element with the 
+            # coming response
+
+            response = Response(content="موفق", status_code=200)
+            response.headers['HX-Redirect'] = f'/register/{user["username"]}'
+            return response
+            # return RedirectResponse(url="/register/"+ user["username"], status_code=status.HTTP_302_FOUND)
         
 
 
         session_id = create_session(user["id"])
 
         # Create a response object for setting a cookie
-        response = RedirectResponse(url="/users/" + user["username"], status_code=status.HTTP_302_FOUND)
+        # response = RedirectResponse(url="/users/" + user["username"], status_code=status.HTTP_302_FOUND)
         # Set the session_id in a cookie
+        response = Response(content="موقف", status_code=200)
+        response.headers['HX-Redirect'] = f'/users/{user["username"]}'
         response.set_cookie(key="session_id", value=session_id, httponly=True, max_age=3 * 3600)  # httponly=True is recommended for security
 
         return response
-    except HTTPException:
-        return RedirectResponse(url="/notfound/" + form_data["username"], status_code=status.HTTP_302_FOUND)
+    except HTTPException as e:
+
+        return f'''<p>{e}<p>'''
 
 
 # usernotfound page

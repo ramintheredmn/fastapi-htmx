@@ -6,7 +6,8 @@
 
 <div id="main" dir="rtl">
   <h2>ورود</h2>
-  <form action="/api/login_info" method="post" class="flex flex-col items-center justify-center">
+  <form hx-post="/api/login_info" hx-target="#result" hx-swap="innerHTML"
+    class="flex flex-col items-center justify-center">
     <div>
       <label for="username">یوزر آیدی</label>
       <input name="username" id="username" type="text" required class="border border-black">
@@ -20,6 +21,7 @@
       <button type="submit" class="border border-black">ورود</button>
     </div>
   </form>
+  <div id="result" dir="rtl"></div>
 </div>
 
 
