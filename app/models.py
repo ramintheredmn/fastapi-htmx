@@ -8,6 +8,7 @@ import logging
 from pydantic import BaseModel, validator
 import datetime
 from persiantools.jdatetime import JalaliDate
+from pydantic.types import Json
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -40,8 +41,8 @@ class RegistrationForm(BaseModel):
     birthdate: Any
     height: int
     weight: int
-    medication: Optional[str] = None
-    comorbitidies: Optional[str] = None
+    medication: Json | None = None
+    comorbitidies: Json | None = None
 
     # Validator for password length
     @validator('password')
@@ -56,6 +57,7 @@ class RegistrationForm(BaseModel):
         if 'user_id' in values and value == values['user_id']:
             raise sameValueError('Password cannot be the same as the username')
         return value
+    # convert the shamsi str date to unix timestamp
     @validator('birthdate', pre=True)
     def toTimestam(cls, value):
         list_date: list = [int(i) for i in value.split('/')]

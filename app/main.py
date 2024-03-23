@@ -101,10 +101,7 @@ async def AuthenticateuserinDatabase(
 ):
     username = form_data['username']
     password = form_data['password']
-
-
     buids = await extract_bulk_user_ids(session)
-
     query = text("SELECT ID, USER_ID, PASSWORD FROM users WHERE USER_ID = :username")
     if username in buids:
         async with session.begin():
@@ -131,8 +128,6 @@ async def AuthenticateuserinDatabase(
             ''',
             headers={"WWW-Authenticate": "Basic"}
         )
-
-
 # create session id with uuid
 def create_session(user_id: str) -> str:
     session_id = str(uuid4())
@@ -144,7 +139,6 @@ async def form_data(username: str = Form(...), password: str = Form(...)):
     form_data = SinginForm(username=username, password=password)
     return {"username": form_data.username, "password": form_data.password}
 
-
 # post route for recevieng post reqs to login and further routing
 @app.post("/api/login_info", response_class=HTMLResponse)
 async def login_info(response: Response, form_data: dict = Depends(form_data), session: AsyncSession = Depends(get_session)):
@@ -152,59 +146,37 @@ async def login_info(response: Response, form_data: dict = Depends(form_data), s
         user = await AuthenticateuserinDatabase(session=session, form_data=form_data)
         print(user)
         if not user["id"]:
-# user[id] = None is the case when the user_id is in the buid, but not in the users table
-# to have a redircet response client-side with htmx 'Hx-Redirect' should be in the header of the response from
+            # user[id] = None is the case when the user_id is in the buid, but not in the users table
+            # to have a redircet response client-side with htmx 'Hx-Redirect' should be in the header of the response from
             # the server, otherwise the client will behave with as a normal htmx respnse and swap an element with the 
             # coming response
-
             response = Response(content="موفق", status_code=200)
             response.headers['HX-Redirect'] = f'/register/{user["username"]}'
             return response
             # return RedirectResponse(url="/register/"+ user["username"], status_code=status.HTTP_302_FOUND)
-        
-
-
         session_id = create_session(user["id"])
-
         # Create a response object for setting a cookie
         # response = RedirectResponse(url="/users/" + user["username"], status_code=status.HTTP_302_FOUND)
         # Set the session_id in a cookie
         response = Response(content="موقف", status_code=200)
         response.headers['HX-Redirect'] = f'/users/{user["username"]}'
         response.set_cookie(key="session_id", value=session_id, httponly=True, max_age=3 * 3600)  # httponly=True is recommended for security
-
         return response
     except HTTPException as e:
-
         return f'''<p>{e}<p>'''
-
-
-# usernotfound page
-
-@app.get("/Usernotfound/{user}", response_class=HTMLResponse)
-async def usernotfound(request: Request, user: str):
-    return templates.TemplateResponse("Notfound.html", {"request": request, "user": user})
-
 
 # route to user dashboard
 @app.get("/users/{username}", response_class=HTMLResponse)
 def getuser(request: Request, username: str ,session_id: Annotated[str | None, Cookie()]):
     return templates.TemplateResponse("Dashboard.html", {"request": request, "user": {"username": username, "usersession": session_id}})
-
-
 # logout route
-
-
 @app.get("/logout", response_class=HTMLResponse)
 async def logout(response: Response, session_id: Annotated[str | None, Cookie()]):
     # Delete the session server-side as before
-
     if session_id and session_id in sessions:
         del sessions[session_id]
-    
     # Clear the session cookie client-side
     response.delete_cookie(key="session_id")
-    
     # return HTML content to swap and elemnt using htmx
     return """<div>با موفقیت خارج شدید. <a href="/login">دوباره وارد شوید</a></div>"""
 
