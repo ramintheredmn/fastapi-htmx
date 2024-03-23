@@ -152,7 +152,7 @@ async def login_info(response: Response, form_data: dict = Depends(form_data), s
         user = await AuthenticateuserinDatabase(session=session, form_data=form_data)
         print(user)
         if not user["id"]:
-
+# user[id] = None is the case when the user_id is in the buid, but not in the users table
 # to have a redircet response client-side with htmx 'Hx-Redirect' should be in the header of the response from
             # the server, otherwise the client will behave with as a normal htmx respnse and swap an element with the 
             # coming response
