@@ -6,55 +6,56 @@
 {% block content %}
 
 <div id="register" dir="rtl" class="">
-  <form class="" hx-post="/api/register" hx-target="result">
+  <form class="" hx-post="/api/register" hx-target="#result" hx-include='[name="username"]'
+    class="flex flex-col items-center justify-center">
     <div class="mb-4">
       <label for="user_id" class="">نام کاربری</label>
-      <input type="text" name="username" disabled value="{{username}}" id="user_id" class="" />
+      <input type="text" name="username" value="{{username}}" readonly required id="user_id" class="" />
     </div>
     <div class="mb-4">
       <label for="password" class="">رمز عبور</label>
-      <input name="password" placeholder="رمز" class="">
+      <input name="password" placeholder="رمز" class="" required>
     </div>
     <div class="mb-4">
       <label for="name" class="">نام</label>
-      <input type="text" name="name" class="">
+      <input type="text" name="name" class="" required>
     </div>
     <div class="mb-4">
       <label for="lastname" class="">نام خانوادگی</label>
-      <input type="text" name="lastname" class="">
+      <input type="text" name="lastname" class="" required>
     </div>
-    <fieldset class="mb-4">
+    <fieldset class="mb-4" required>
       <legend class="">جنسیت</legend>
       <div class="flex items-center mb-4">
         <label class="inline-flex items-center">
-          <input type="radio" name="gender" value="1" class="form-radio text-indigo-600">
+          <input type="radio" name="sex" value="1" class="form-radio text-indigo-600" required>
           <span class="ml-2">مرد</span>
         </label>
       </div>
       <div class="flex items-center mb-4">
         <label class="inline-flex items-center">
-          <input type="radio" name="gender" value="2" class="form-radio text-pink-600">
+          <input type="radio" name="sex" value="2" class="form-radio text-pink-600">
           <span class="ml-2">زن</span>
         </label>
       </div>
       <div class="flex items-center mb-4">
         <label class="inline-flex items-center">
-          <input type="radio" name="gender" value="0" class="form-radio text-gray-600">
+          <input type="radio" name="sex" value="0" class="form-radio text-gray-600">
           <span class="ml-2">دیگر</span>
         </label>
       </div>
     </fieldset>
     <div class="mb-4">
       <label for="date" class="">تاریخ تولد</label>
-      <input name="date" type="text" data-jdp class="">
+      <input name="birthdate" type="text" data-jdp class="" required>
     </div>
     <div class="mb-4">
       <label for="height" class="">قد به سانتی متر</label>
-      <input name="height" type="text" id="height" placeholder="قد" class="">
+      <input name="height" type="text" id="height" placeholder="قد" class="" required>
     </div>
     <div class="mb-4">
       <label for="weight" class="">وزن به کیلوگرم</label>
-      <input type="text" name="weight" class="">
+      <input type="text" name="weight" class="" required>
     </div>
     <div class="flex items-center justify-between">
       <button class="" type="submit">

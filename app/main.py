@@ -222,12 +222,10 @@ def notfound(username: str, request: Request):
 async def register(request: Request, username: str):
     return templates.TemplateResponse("register.html", {"request": request, "username": username})
 
-# user form
-@app.post("/api/register")
-async def register_info(
-    password: str = Form(...),
+
+# register helper function
+async def register_form(password: str = Form(...),
     username: str = Form(...),
-    session: AsyncSession = Depends(get_session),
     sex: int = Form(...),
     name: str = Form(...),
     lastname: str = Form(...),
@@ -236,48 +234,59 @@ async def register_info(
     weight: str = Form(...),
     medication: str | None = Form(None),
     comorbitidies: str | None = Form(None),
+                        ):
+    if not username:
+        return "no username"
+    return {"username": username, "password": password, "sex":sex, "name": name, "lastname": lastname, "birthdate": birthdate, "height": height, "weight": weight, "medication": medication, "comorbitidies": comorbitidies}
+
+# user form
+@app.post("/api/register", response_class=HTMLResponse)
+async def register_info(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+    form_data = Depends(register_form)
+
 ):  # username from the login form
     query = text(
         "INSERT INTO users (USER_ID ,PASSWORD, SEX, name, lastname, BIRTHDATE, HEIGHT, WEIGHT, MEDICATIONS, COMORBIDITIES) VALUES (:USERNAME, :PASSWORD, :SEX, :name, :lastname, :BIRTHDATE, :HEIGHT, :WEIGHT, :MEDICATIONS, :COMORBITIDIES)"
     )
 
     # caling pydantic modal to validate the data
+    if request:
+        print(request)
+    try:
+        validated_form_data = RegistrationForm(**form_data)
+        
+    except Exception as e:
+        print("pydantic validation", str(e))
+        return f'''<p>{e}</p>'''
 
     try:
-        form_data = RegistrationForm(
-            user_id=username,
-            password=password,
-            sex=sex,
-            name=name,
-            lastname=lastname,
-            birthdate=birthdate,
-            height=height,
-            weight=weight,
-            medication=medication,
-            comorbitidies=comorbitidies,
-        )
-    except ValidationError as e:
-        return {"error": str(e)}
-
     # update the user table with the new data
-    async with session.begin():
-        await session.execute(
-            query,
-            params={
-                "USERNAME": form_data.user_id,
-                "PASSWORD": form_data.password,
-                "SEX": form_data.sex,
-                "name": form_data.name,
-                "lastname": form_data.lastname,
-                "BIRTHDATE": form_data.birthdate,
-                "HEIGHT": form_data.height,
-                "WEIGHT": form_data.weight,
-                "MEDICATIONS": form_data.medication,
-                "COMORBITIDIES": form_data.comorbitidies,
-            },
-        )
-        await session.commit()
-    return {"message ": "registration successful"}
+        async with session.begin():
+            await session.execute(
+                query,
+                params={
+                    "USERNAME": validated_form_data.username,
+                    "PASSWORD": validated_form_data.password,
+                    "SEX": validated_form_data.sex,
+                    "name": validated_form_data.name,
+                    "lastname": validated_form_data.lastname,
+                    "BIRTHDATE": validated_form_data.birthdate,
+                    "HEIGHT": validated_form_data.height,
+                    "WEIGHT": validated_form_data.weight,
+                    "MEDICATIONS": validated_form_data.medication,
+                    "COMORBITIDIES": validated_form_data.comorbitidies,
+                },
+            )
+            await session.commit()
+    except Exception as e:
+        print("error in db", str(e))
+        await session.rollback()
+        return f'''<p>{e}</p>'''
+    return '''<p>ثبت نام با موقفیت انجام شد</p>
+    <a href="/login">لطفا وارد شوید</a>
+    '''
 
 
 # +---------------+-------------+------+-----+---------+-------+

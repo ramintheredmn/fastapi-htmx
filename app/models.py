@@ -21,7 +21,7 @@ templates = Jinja2Templates(directory="app/templates")
 # The user registrition form
 
 class RegistrationForm(BaseModel):
-    user_id: str
+    username: str
     password: str
     sex: int
     name: str
