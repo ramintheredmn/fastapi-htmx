@@ -1,7 +1,7 @@
 from uuid import uuid4
 from pydantic import ValidationError
 from app.drugsearch import df, drugs_dict
-from app.models import app, logger, templates, RegistrationForm, SinginForm
+from app.models import app, lessValueError, logger, sameValueError, templates, RegistrationForm, SinginForm
 from typing import Any, Annotated
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Form, Request, HTTPException, Depends, APIRouter, Body, status, Cookie, Response
@@ -224,19 +224,17 @@ async def register(request: Request, username: str):
 
 
 # register helper function
-async def register_form(password: str = Form(...),
-    username: str = Form(...),
-    sex: int = Form(...),
-    name: str = Form(...),
-    lastname: str = Form(...),
-    birthdate: int = Form(...),
-    height: str = Form(...),
-    weight: str = Form(...),
-    medication: str | None = Form(None),
-    comorbitidies: str | None = Form(None),
+async def register_form(password: Annotated[str, Form()],
+    username: Annotated[str, Form()],
+    sex: Annotated[str, Form()],
+    name: Annotated[str, Form()],
+    lastname: Annotated[str, Form()],
+    birthdate: Annotated[Any, Form()],
+    height: Annotated[str, Form()],
+    weight: Annotated[str, Form()],
+    medication: Annotated[str | None, Form()] = None,
+    comorbitidies: Annotated[str | None, Form()] = None,
                         ):
-    if not username:
-        return "no username"
     return {"username": username, "password": password, "sex":sex, "name": name, "lastname": lastname, "birthdate": birthdate, "height": height, "weight": weight, "medication": medication, "comorbitidies": comorbitidies}
 
 # user form
@@ -257,9 +255,10 @@ async def register_info(
     try:
         validated_form_data = RegistrationForm(**form_data)
         
-    except Exception as e:
-        print("pydantic validation", str(e))
-        return f'''<p>{e}</p>'''
+    except lessValueError as e:
+        return f'''<p>رمز عبور باید حداقل ۸ کاراکتر باشد</p>'''
+    except sameValueError as e:
+        return f'''<p>رمز عبور نمی‌تواند با نام کاربری برابر باشد</p>'''
 
     try:
     # update the user table with the new data
@@ -288,6 +287,8 @@ async def register_info(
     <a href="/login">لطفا وارد شوید</a>
     '''
 
+
+# the MySql table
 
 # +---------------+-------------+------+-----+---------+-------+
 # | Field         | Type        | Null | Key | Default | Extra |

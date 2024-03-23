@@ -14,7 +14,7 @@
     </div>
     <div class="mb-4">
       <label for="password" class="">رمز عبور</label>
-      <input name="password" placeholder="رمز" class="" required>
+      <input name="password" placeholder="رمز" class="" required pattern="[A-Za-z0-9@#]+">
     </div>
     <div class="mb-4">
       <label for="name" class="">نام</label>
@@ -51,11 +51,11 @@
     </div>
     <div class="mb-4">
       <label for="height" class="">قد به سانتی متر</label>
-      <input name="height" type="text" id="height" placeholder="قد" class="" required>
+      <input name="height" type="text" id="height" placeholder="قد" class="" required pattern="[0-9]+">>
     </div>
     <div class="mb-4">
       <label for="weight" class="">وزن به کیلوگرم</label>
-      <input type="text" name="weight" class="" required>
+      <input type="text" name="weight" class="" required pattern="[0-9]+">>
     </div>
     <div class="flex items-center justify-between">
       <button class="" type="submit">
