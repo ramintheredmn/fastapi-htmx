@@ -1,6 +1,7 @@
 # Byte-compiled / optimized / DLL files
 tailwind.config.js
 app/static/src/tw.css
+input.css
 __pycache__/
 *.py[cod]
 *$py.class

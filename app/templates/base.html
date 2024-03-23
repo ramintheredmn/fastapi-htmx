@@ -13,21 +13,17 @@
   <script src="/static/js/jalalidatepicker.min.js"></script>
 </head>
 
-<body>
-
-  <header>
-    <!-- Navigation bar or header content goes here -->
-  </header>
-
+<body class="bg-gray-600">
+  {% block header %}
+  {% include "/partial/header.html" %}
+  {% endblock %}
   <main>
     {% block content %}
     {% endblock %}
   </main>
-
-  <footer>
-    <!-- Footer content goes here -->
-  </footer>
-
+  {% block footer %}
+  {% include "/partial/footer.html" %}
+  {% endblock %}
 </body>
 
 <script>jalaliDatepicker.startWatch();</script>
