@@ -68,8 +68,8 @@ async def receive(request: Request, session: AsyncSession = Depends(get_session)
 
 # define the root route, that returns the index.html
 @app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+async def read_root(request: Request, username: Annotated[str|None, Cookie()] = None):
+    return templates.TemplateResponse("index.html", {"request": request, "username": username})
 
 
 
@@ -159,16 +159,19 @@ async def login_info(response: Response, form_data: dict = Depends(form_data), s
         # response = RedirectResponse(url="/users/" + user["username"], status_code=status.HTTP_302_FOUND)
         # Set the session_id in a cookie
         response = Response(content="موقف", status_code=200)
-        response.headers['HX-Redirect'] = f'/users/{user["username"]}'
+        response.headers['HX-Redirect'] = '/users/me'
         response.set_cookie(key="session_id", value=session_id, httponly=True, max_age=3 * 3600)  # httponly=True is recommended for security
+        response.set_cookie(key="username", value=user["username"], httponly=True, max_age=3 * 3600)  # httponly=True is recommended for security
         return response
     except HTTPException as e:
         return f'''<p>{e}<p>'''
 
 # route to user dashboard
-@app.get("/users/{username}", response_class=HTMLResponse)
-def getuser(request: Request, username: str ,session_id: Annotated[str | None, Cookie()]):
-    return templates.TemplateResponse("Dashboard.html", {"request": request, "user": {"username": username, "usersession": session_id}})
+@app.get("/users/me", response_class=HTMLResponse)
+def getuser(request: Request, username: Annotated[str | None, Cookie()] = None, session_id: Annotated[str | None, Cookie()] = None):
+    if not session_id  or session_id not in sessions:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+    return templates.TemplateResponse("Dashboard.html", {"request": request, "username": username})
 # logout route
 @app.get("/logout", response_class=HTMLResponse)
 async def logout(response: Response, session_id: Annotated[str | None, Cookie()]):
@@ -177,6 +180,7 @@ async def logout(response: Response, session_id: Annotated[str | None, Cookie()]
         del sessions[session_id]
     # Clear the session cookie client-side
     response.delete_cookie(key="session_id")
+    response.delete_cookie(key="username")
     # return HTML content to swap and elemnt using htmx
     return """<div>با موفقیت خارج شدید. <a href="/login">دوباره وارد شوید</a></div>"""
 

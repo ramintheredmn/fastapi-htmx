@@ -1,10 +1,34 @@
-<header class="flex items-center justify-between bg-gray-800 px-8 h-28 text-white">
+<header class="flex items-center justify-between bg-gray-800 px-8 h-20 text-white sticky top-0 z-50" dir="">
   <logo>
-    <a href="">
-      <img width="48" class="text-white" height="48" src="https://img.icons8.com/pulsar-line/48/ffffff/fire-heart.png"
-        alt="fire-heart" />
-      <span>Awesome</span>
+    <a href="" class="flex items-center gap-1">
+      <img class="h-8 w-8 -mt-1"
+        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAAES0lEQVR4nO2ZXWwUVRiGX0rZ1SaighJNTLE4ne/sElq0JqZEIWm8kAjtDLVgFAQ14A/ECy9IjPE3UdAYxSvjhYlGvZAYLwRLQKAWdmYLWYQGg0GqJoSZ7XarlYKWle4ec2b2r90EZrs/MzW8yZvsnJ0587znO+fbiwWu6X8qYwXqTAUfRjuxENNNZ1dCMlWcMVVwQ8EWTCedawcZCmIC3gqgYuD39bgO00HDD2G2qeK0AI89Ch7ttEOYKrZhOshUsUMAD64GH9kMPvxUtgqXzU7cCy9rSMXtpoKEAP5jE/jIFtvx9ekqKOj/qQs+eKnLGCp2xttxg3Xdga3W1nksB59xbG02xGviXnEmTBWa0YEHXNvrhoKwBbUKS8WYqWKvuB5+2oa+uL2Gn986IxsiutoKkDDbEYx14bZ0h0oaCl6qegBTwZeZLmMq+CI99ou4/vNZ8JEXwJN7fDzxaW02gAiWhv4sqqIt+7xqzfFy1eCj7bgvc1CFxSpGO7DBUHBBjIvDe/GtGs57/Zb/fn+mHWKz3ZUMBVFTwTfi3vgGcFOMqUiZCpZXJYCh4iPr5U/aq53XKi0L2MTns7IBeI+fj75ibyVxPjL3Da2bWBlTxdmq/F6YCn62Os0zNoAIIQ7pYJd1Hqyx5He+XIBeP092+/hfL4IPPWFXTYTPP+SDa7Jb6bmKBzBUjFp7/fnCbpNx6mAOPuNLn+TOw2THc+ejt6LwYVm+/2TrvPHI4jv50SaJhwOMH21q5P1L6vnAijl8eJMNmfq+MEBqn8+G3VjLz6ycy0+01lvPijmONElczHmydd4ljWhJ2cG1QOBunbGDOmP8Sg4vJH56+a088dXELSQ83u23vhP3XG0enWj/4cbG5rLAh2R5rc7Y2FVfmucTSxv4v7vqsvDic39bg+PnddtjOtHjpa78uiJfmrUAHt93veX+B4uG5xmLBZwSvM7YPcWu/GSfWlXPTz1SP+Xn9XQlQsHg4qkEOFDii8tmjeiHoruN29B6YQjn3Ukj+sBtYL3Q7znfPkTHPViBY84rwFjcbWC90DHnFSix+1TIY8VU4DcPAPNJ/tV5BYh2ewCYTzDRbscBQoxtdB2YTbRgcl6BYHCOztioh1b/whHG5qIYaURveyjANhSryIIFN2qMnfMAvHl40aKbiw5gVYGxh90OoAUCypTg80K862KAHShVO4GZGmN7XNg6+3uWLatFORRpaanTiQ5VEf54T3PzTSinxIQ6UbgK8D9GZPkWVELpSuyqYIADfZI0G5WUOBM6Yx9XAP7rnvnzq/NPDgdmaESva4wlSwXXGEtpRO9woAbVlibLbRrRYAnw53WiLripPkm6Q2MsVDQ80bGQJN0FLyjS0jJLJ3pTJ7rsAH5cJ9reLUl+eE1hWW4SbfAK8AOhQMCdv5WcSqysztirGmP/5IGPaURvVK3LlEN9stygMfat+N3wzF6/JpRf/wEJYdB3zBCvggAAAABJRU5ErkJggg==">
+      <span>GadgetPharmacy</span>
     </a>
   </logo>
-  <nav>Navigation</nav>
+  <nav>
+    <ul class="flex items-center navitems">
+      <li><a href="/">خانه</a></li>
+      <li><a href="">درباره</a></li>
+      {% if username %}
+      <li x-data="{ dropdownOpen: false }" class="relative">
+        <a @click="dropdownOpen = !dropdownOpen">
+          <img class="h-8 rounded-full object-cover bg-teal-100"
+            src="https://img.icons8.com/doodle/96/bart-simpson.png">
+          {{username}}
+          <img class="w-4" src="https://img.icons8.com/ios/50/777777/expand-arrow--v1.png" alt="expand-arrow--v1" />
+        </a>
+        <div x-show="dropdownOpen"
+          class="absolute right-0 bg-white text-black text-end rounded-lg shadow z-20 w-44 p-2">
+          <ul class="listitem [&>li>a]:justify-end gap-2">
+            <li><a href="/users/me">داشبود</a></li>
+            <li><a href="/logout">خروج</a></li>
+          </ul>
+        </div>
+      </li>
+      {% else %}
+      <li><a href="/login">ورود</a></li>
+      {% endif %}
+    </ul>
+  </nav>
 </header>

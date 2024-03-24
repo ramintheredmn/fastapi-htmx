@@ -7,20 +7,19 @@
   <title>{%block title%}{%endblock%}</title>
   <link rel="stylesheet" href="/static/css/main.css" type="text/css" />
   <script src="/static/js/htmx.min.js"></script>
+  <script src="/static/js/alpine.min.js" defer></script>
   <script charset="utf-8" src="/static/js/plotly-2.27.0.min.js"></script>
   <link rel="stylesheet" href="/static/css/jalalidatepicker.min.css" />
 
   <script src="/static/js/jalalidatepicker.min.js"></script>
 </head>
 
-<body>
+<body class="bg-gray-200">
   {% block header %}
   {% include "/partial/header.html" %}
   {% endblock %}
-  <main>
-    {% block content %}
-    {% endblock %}
-  </main>
+  {% block content %}
+  {% endblock %}
   {% block footer %}
   {% include "/partial/footer.html" %}
   {% endblock %}

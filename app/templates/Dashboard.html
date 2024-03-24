@@ -5,7 +5,7 @@
 {% block content %}
 
 <div id="dashboard" dir="rtl" class="grid grid-cols-1 items-center">
-  <h1>کار بر {{user.username}} خوش آمدید</h1>
+  <h1>کار بر {{username}} خوش آمدید</h1>
   <button class="border border-black text-black bg-red" hx-get="/logout" hx-trigger="click" hx-swap="innerHTML"
     hx-target="#dashboard">خروج
   </button>
