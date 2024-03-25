@@ -4,24 +4,32 @@
 
 {% block content %}
 
-<div id="main" dir="rtl">
-  <h2>ورود</h2>
-  <form hx-post="/api/login_info" hx-target="#result" hx-swap="innerHTML"
-    class="flex flex-col items-center justify-center p-27">
-    <div>
-      <label for="username">یوزر آیدی</label>
-      <input name="username" id="username" type="text" required class="border border-black">
-    </div>
-    <div>
-      <label for="password">رمز عبور</label>
-      <input name="password" id="password" type="text" required class="border border-black">
-    </div>
-    <div class="flex items-center justify-center">
+<div id="main" dir="rtl" class="grid grid-cols-3 max-w-7xl mx-auto mt-10">
+  <div class="card col-span-1 mr-[20%] space-y-4">
+    <h2 class="text-3xl font-iransans-bold">ورود</h2>
+    <p class="font-iransans-ultra-light">در صورت ثبت نام قبلی به صفحه ثبت نام هداید خواهید شدی در غیر اینصورت اگر یوزر
+      در اپ گچت وارد شده باشد به صفحه ثبت نام هدایت حواهید شد</p>
+  </div>
+  <div class="card col-span-2 flex flex-col itmes-center justify-center mr-[10%] ml-[20%] p-4 pt-8">
+    <form hx-post="/api/login_info" hx-target="#result" hx-swap="innerHTML" hx-indicator="#dot"
+      class="flex flex-col items-center justify-center p-27">
+      <div class="mb-4 flex gap-2 itmes-center font-iransans-medium">
+        <label class="label" for="username">یوزر آیدی</label>
+        <input class="input" name="username" id="username" type="text" required">
+      </div>
+      <div class="mb-4 flex gap-2 itmes-center font-iransans-medium">
+        <label class="label" for="password">رمز عبور</label>
+        <input name="password" id="password" type="text" required class="input">
+      </div>
+      <div class="flex items-center justify-center">
 
-      <button type="submit" class="border border-black">ورود</button>
-    </div>
-  </form>
-  <div id="result" dir="rtl"></div>
+        <button type="submit" class="button text-center font-iransans-bold">ورود</button>
+      </div>
+      <img id="dot" class="htmx-indicator h-40 w-40" src="/static/imgs/spin.jpg"></img>
+    </form>
+    <div id="result" dir="rtl" class="font-iransans-light flex-1"></div>
+
+  </div>
 </div>
 
 
