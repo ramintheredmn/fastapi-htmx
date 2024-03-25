@@ -4,11 +4,14 @@
 
 {% block content %}
 
-<div id="dashboard" dir="rtl" class="grid grid-cols-1 items-center">
-  <h1>کار بر {{username}} خوش آمدید</h1>
-  <button class="border border-black text-black bg-red" hx-get="/logout" hx-trigger="click" hx-swap="innerHTML"
-    hx-target="#dashboard">خروج
-  </button>
+<div id="dashboard" dir="rtl" class="grid grid-cols-10 gap-4">
+  <main class="col-span-full md:col-span-9 order-2 md:order-1 bg-yellow-200 mx-8">
+
+  </main>
+  <aside class="col-span-full md:col-span-1 order-1 md:order-2 bg-red-200 mt-4 mx-8">
+    <a>ضربان قلب</a>
+    <a>خواب</a>
+  </aside>
 </div>
 
 {% endblock %}

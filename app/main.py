@@ -4,7 +4,7 @@ from app.drugsearch import df, drugs_dict
 from app.models import app, lessValueError, logger, sameValueError, templates, RegistrationForm, SinginForm
 from typing import Any, Annotated
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Form, Request, HTTPException, Depends, APIRouter, Body, status, Cookie, Response
+from fastapi import Form, Header, Request, HTTPException, Depends, APIRouter, Body, status, Cookie, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from app.config import get_session
 from sqlalchemy import text
@@ -68,8 +68,8 @@ async def receive(request: Request, session: AsyncSession = Depends(get_session)
 
 # define the root route, that returns the index.html
 @app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request, username: Annotated[str|None, Cookie()] = None):
-    return templates.TemplateResponse("index.html", {"request": request, "username": username})
+async def read_root(request: Request, username: Annotated[str|None, Cookie()] = None, session_id: Annotated[str|None, Cookie()] = None):
+    return templates.TemplateResponse("index.html", {"request": request, "username": username, "session_id": session_id})
 
 
 
@@ -174,18 +174,24 @@ def getuser(request: Request, username: Annotated[str | None, Cookie()] = None, 
     return templates.TemplateResponse("Dashboard.html", {"request": request, "username": username})
 # logout route
 @app.get("/logout", response_class=HTMLResponse)
-async def logout(response: Response, session_id: Annotated[str | None, Cookie()]):
+async def logout(request: Request,response: Response, session_id: Annotated[str | None, Cookie()]):
     # Delete the session server-side as before
-    if response:
-        print(str(response.headers.items))
+    if not session_id:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)    
+    
     if session_id and session_id in sessions:
         del sessions[session_id]
     # Clear the session cookie client-side
     response.delete_cookie(key="session_id")
     response.delete_cookie(key="username")
-    # return HTML content to swap and elemnt using htmx
-    return """<div>با موفقیت خارج شدید. <a href="/login">دوباره وارد شوید</a></div>"""
+    response_to = Response(content="موقف", status_code=200)
+    response_to.headers['HX-Redirect'] = '/login'
+    response_to.delete_cookie(key="session_id")
+    response_to.delete_cookie(key="username")
 
+    # return HTML content to swap an elemnt usi
+    
+    return response_to   
 # user not found
 @app.get("/notfound/{username}", response_class=HTMLResponse)
 def notfound(username: str, request: Request):
