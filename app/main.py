@@ -176,6 +176,8 @@ def getuser(request: Request, username: Annotated[str | None, Cookie()] = None, 
 @app.get("/logout", response_class=HTMLResponse)
 async def logout(response: Response, session_id: Annotated[str | None, Cookie()]):
     # Delete the session server-side as before
+    if response:
+        print(str(response.headers.items))
     if session_id and session_id in sessions:
         del sessions[session_id]
     # Clear the session cookie client-side
