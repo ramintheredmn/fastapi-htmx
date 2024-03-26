@@ -7,7 +7,7 @@
 
 <div id="register" dir="rtl" class="">
   <form hx-post="/api/register" hx-target="#result" hx-include='[name="username"]'
-    class="flex flex-col items-center justify-center p-27">
+    class="flex flex-col items-center justify-center gap-4 font-iransans-light">
     <div class="mb-4">
       <label for="user_id" class="">نام کاربری</label>
       <input type="text" name="username" value="{{username}}" readonly required id="user_id" class="" />
@@ -56,6 +56,14 @@
     <div class="mb-4">
       <label for="weight" class="">وزن به کیلوگرم</label>
       <input type="text" name="weight" class="" required pattern="[0-9]+">>
+    </div>
+    <div id="druglist">
+      <label class="label">نام دارو</label>
+      <input hx-post="/api/drug_search" hx-target="#search" hx-swap="innerHTML" hx-trigger="keyup delay:500ms"
+        type="text" class="input" id="drugsearch">
+
+      <div id="search" class="w-auto"></div>
+
     </div>
     <div class="flex items-center justify-between">
       <button class="border border-black" type="submit">

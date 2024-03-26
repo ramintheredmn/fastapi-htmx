@@ -3,26 +3,36 @@
 {% block title %} داشبورد {% endblock %}
 
 {% block content %}
+<section dir="rtl" x-data="{name: '{{name}}', date: new Date().toLocaleDateString('fa-IR')}">
+  <div class="w-auto h-auto card flex flex-row items-center justify-between p-2 pb-0 mx-3 mt-1 font-iransans-bold">
+    <h2 class=" rounded-full">
+      خوش آمدید
+      {{name}}</h2>
+    <span x-text='date'></span>
 
-<div id="dashboard" dir="rtl" class="grid grid-cols-10 gap-4" x-data="{ hr: true, sl: false }">
-  <aside class="col-span-full md:col-span-1 order-1 mt-4 mx-8">
-    <div class="w-full flex flex-row md:flex-col md:mx-8 items-center gap-2 justify-center font-iransans-bold mt-2">
-      <button class="button" @click="[hr = true, sl = false]">ضربان قلب</button>
-      <button class="button" @click="[sl = true, hr = false]">خواب</button>
-    </div>
-  </aside>
-  <main class="col-span-full md:col-span-9 order-2 mx-8 md:mt-4 [&>div]:w-full [&>div]:h:full">
-    <div x-show="sl" id="sleep">
-      sleep
-    </div>
-    <div x-show="hr" class="card p-0 flex items-center justify-center" id="heartrate" hx-get="/api/heartrate"
-      hx-trigger="load" hx-indicator="#hrwait" hx-target="#hrchart" hx-swap="innerHTML">
-      <div id="hrchart" class="w-full h-full rounded-lg mr-8">
-
+  </div>
+  <div id="dashboard" dir="rtl" class="grid grid-cols-12 gap-4 md:gap-0" x-data="{ hr: true, sl: false }">
+    <aside
+      class="card w-auto md:w-auto md:my-auto mx-auto md:mr-4 px-2 md:px-0 bg-gray-700 col-span-full md:col-span-1 order-1 mt-2">
+      <div class="flex flex-row md:flex-col items-center gap-2 justify-center font-iransans-bold mt-2">
+        <button class="button px-1 mx-1 py-0" @click="[hr = true, sl = false]">قلب</button>
+        <button class="button px-1 mx-1 py-0" @click="[sl = true, hr = false]">خواب</button>
       </div>
-      <img id="hrwait" class="htmx-indicator h-8 w-8" src="/static/imgs/spinner.gif"></img>
-    </div>
-  </main>
-</div>
+    </aside>
+    <main class="col-span-full md:col-span-11 order-2 md:mt-4 mx-4 md:ml-4 md:mr-0 [&>div]:w-full [&>div]:h:full">
+      <div x-show="sl" id="sleep">
+        sleep
+      </div>
+      <div x-show="hr" class="card flex flex-col items-center justify-center" id="heartrate" hx-get="/api/heartrate"
+        hx-trigger="load, every 300s" hx-indicator="#hrwait" hx-target="#hrchart"
+        hx-swap="innerHTML swap:1s transition:true">
+        <div id="hrchart" class="w-full h-full">
+
+        </div>
+        <img id="hrwait" class="htmx-indicator h-8 w-8" src="/static/imgs/spinner.gif"></img>
+      </div>
+    </main>
+  </div>
+</section>
 
 {% endblock %}

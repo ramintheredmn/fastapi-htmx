@@ -1,10 +1,9 @@
 from uuid import uuid4
-from pydantic import ValidationError
 from app.drugsearch import df, drugs_dict
 from app.models import app, lessValueError, logger, sameValueError, templates, RegistrationForm, SinginForm
 from typing import Any, Annotated
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Form, Header, Request, HTTPException, Depends, APIRouter, Body, status, Cookie, Response
+from fastapi import Form, Header, Request, HTTPException, Depends, status, Cookie, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from app.config import get_session
 from app.charts import make_chart
@@ -14,6 +13,31 @@ import pandas as pd
 # sessions in-memmory database that will contain session-id and user_id of the user that is signed-in
 
 sessions = {}
+
+# in-memmory database ( python dict ) for storing user info
+users = {}
+                    # "SEX": validated_form_data.sex,
+                    # "name": validated_form_data.name,
+                    # "lastname": validated_form_data.lastname,
+                    # "BIRTHDATE": validated_form_data.birthdate,
+                    # "HEIGHT": validated_form_data.height,
+                    # "WEIGHT": validated_form_data.weight,
+                    # "MEDICATIONS": validated_form_data.medication,
+                    # "COMORBITIDIES": validated_form_data.comorbitidies,
+
+
+async def user_info(session: AsyncSession, username: str):
+    async with session.begin():
+        query = text("SELECT SEX, name, lastname, BIRTHDATE, HEIGHT, WEIGHT, MEDICATIONS, COMORBIDITIES FROM users WHERE USER_ID = :user_id")
+        query_result = await session.execute(query, params={"user_id": username})
+        users_list_tuple = [user for user in query_result.fetchall()]
+        if users_list_tuple:
+            user_info = users_list_tuple[0]
+            users[username] = {'sex': user_info[0], 'name': user_info[1], 'lastname': user_info[2], 'birthdate': user_info[3], 'height': user_info[4], 'weight': user_info[5], 'medications': user_info[6], 'comorbidities': user_info[7]}
+            return users[username]
+        else:
+            return None
+
 
 # receive post reqs from mobile app
 @app.post("/api/receive")
@@ -156,6 +180,7 @@ async def login_info(response: Response, form_data: dict = Depends(form_data), s
             return response
             # return RedirectResponse(url="/register/"+ user["username"], status_code=status.HTTP_302_FOUND)
         session_id = create_session(user["username"])
+        await user_info(session=session, username=user["username"])
         # Create a response object for setting a cookie
         # response = RedirectResponse(url="/users/" + user["username"], status_code=status.HTTP_302_FOUND)
         # Set the session_id in a cookie
@@ -173,7 +198,8 @@ async def login_info(response: Response, form_data: dict = Depends(form_data), s
 def getuser(request: Request, username: Annotated[str | None, Cookie()] = None, session_id: Annotated[str | None, Cookie()] = None):
     if not session_id  or session_id not in sessions:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-    return templates.TemplateResponse("Dashboard.html", {"request": request, "username": username})
+    user = users[username]
+    return templates.TemplateResponse("Dashboard.html", {"request": request, "username": username, "name": user["name"]})
 # logout route
 @app.get("/logout", response_class=HTMLResponse)
 async def logout(request: Request,response: Response, session_id: Annotated[str | None, Cookie()]):
@@ -186,14 +212,14 @@ async def logout(request: Request,response: Response, session_id: Annotated[str 
     # Clear the session cookie client-side
     response.delete_cookie(key="session_id")
     response.delete_cookie(key="username")
-    # response_to = Response(content="موقف", status_code=200)
-    response.headers['HX-Redirect'] = '/login'
-    # response_to.delete_cookie(key="session_id")
-    # response_to.delete_cookie(key="username")
+    response_to = Response(content="موقف", status_code=200)
+    response_to.headers['HX-Redirect'] = '/login'
+    response_to.delete_cookie(key="session_id")
+    response_to.delete_cookie(key="username")
 
     # return HTML content to swap an elemnt usi
     
-    return response
+    return response_to
 # user not found
 @app.get("/notfound/{username}", response_class=HTMLResponse)
 def notfound(username: str, request: Request):
@@ -300,7 +326,7 @@ async def drug_search(request: Request, query: str = Form(...)):
     filtered_df: Any = df[df["Drug Name"].str.contains(query, case=False)]
     drugs = filtered_df["Drug Name"].drop_duplicates().tolist()
     return templates.TemplateResponse(
-        "search.html", {"request": request, "options": drugs}
+        "drugpartial/search.html", {"request": request, "options": drugs}
     )
 
 
@@ -388,12 +414,12 @@ async def get_chart(hx_request: Annotated[str|None, Header()] ,response: Respons
         
     #return {"msg": "success"}
 
-        x_data = [x[1] for x in res_table]
-        y_data = [y[0] for y in res_table]
+        y_data = [x[1] for x in res_table]
+        x_data = [int(y[0]) * 1000 for y in res_table]
 
         # x_data = [x  for x in range(100)]
         # y_data = [randint(1, 50)  for y in range(100)]
 
         
-        return make_chart(x_data=y_data, y_data=x_data)
+        return make_chart(x_data=x_data, y_data=y_data)
 

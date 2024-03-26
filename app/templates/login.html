@@ -5,7 +5,7 @@
 {% block content %}
 
 <div id="main" dir="rtl" class="grid grid-rows-2 md:grid-cols-4 max-w-7xl mx-auto mt-10 space-y-4">
-  <div class="card row-span-1 mx-[20%] space-y-4 md:mt-4 md:col-span-2 md:mx-[10%]">
+  <div class="card p-4 row-span-1 mx-[20%] space-y-4 md:mt-4 md:col-span-2 md:mx-[10%]">
     <h2 class="text-3xl font-iransans-bold">ورود</h2>
     <p class="font-iransans-ultra-light">هنوز ثبت نام نکرده اید؟‌با پرکردن فرم مقابل لا یوزر آیدی ثبت شده در اپلیکیشن به
       صفحه ثبت نام ههدایت خواهید شد</p>
@@ -14,11 +14,11 @@
     <form hx-post="/api/login_info" hx-target="#result" hx-swap="innerHTML" hx-indicator="#dot"
       class="flex flex-col items-center justify-center p-27">
       <div class="mb-4 flex gap-2 itmes-center font-iransans-medium">
-        <label class="label" for="username">یوزر آیدی</label>
+        <label class="label w-[5rem] mt-4" for="username">یوزر آیدی</label>
         <input class="input" name="username" id="username" type="text" required">
       </div>
       <div class="mb-4 flex gap-2 itmes-center font-iransans-medium">
-        <label class="label" for="password">رمز عبور</label>
+        <label class="label w-[5rem] mt-2" for="password">رمز عبور</label>
         <input name="password" id="password" type="text" required class="input">
       </div>
       <div class="flex items-center justify-center">
