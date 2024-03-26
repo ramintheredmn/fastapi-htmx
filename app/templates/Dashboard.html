@@ -4,14 +4,25 @@
 
 {% block content %}
 
-<div id="dashboard" dir="rtl" class="grid grid-cols-10 gap-4">
-  <main class="col-span-full md:col-span-9 order-2 md:order-1 bg-yellow-200 mx-8">
-
-  </main>
-  <aside class="col-span-full md:col-span-1 order-1 md:order-2 bg-red-200 mt-4 mx-8">
-    <a>ضربان قلب</a>
-    <a>خواب</a>
+<div id="dashboard" dir="rtl" class="grid grid-cols-10 gap-4" x-data="{ hr: true, sl: false }">
+  <aside class="col-span-full md:col-span-1 order-1 mt-4 mx-8">
+    <div class="w-full flex flex-row md:flex-col md:mx-8 items-center gap-2 justify-center font-iransans-bold mt-2">
+      <button class="button" @click="[hr = true, sl = false]">ضربان قلب</button>
+      <button class="button" @click="[sl = true, hr = false]">خواب</button>
+    </div>
   </aside>
+  <main class="col-span-full md:col-span-9 order-2 mx-8 md:mt-4 [&>div]:w-full [&>div]:h:full">
+    <div x-show="sl" id="sleep">
+      sleep
+    </div>
+    <div x-show="hr" class="card p-0 flex items-center justify-center" id="heartrate" hx-get="/api/heartrate"
+      hx-trigger="load" hx-indicator="#hrwait" hx-target="#hrchart" hx-swap="innerHTML">
+      <div id="hrchart" class="w-full h-full rounded-lg mr-8">
+
+      </div>
+      <img id="hrwait" class="htmx-indicator h-8 w-8" src="/static/imgs/spinner.gif"></img>
+    </div>
+  </main>
 </div>
 
 {% endblock %}

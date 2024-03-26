@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Form, Header, Request, HTTPException, Depends, APIRouter, Body, status, Cookie, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from app.config import get_session
+from app.charts import make_chart
 from sqlalchemy import text
 import pandas as pd
 
@@ -154,14 +155,15 @@ async def login_info(response: Response, form_data: dict = Depends(form_data), s
             response.headers['HX-Redirect'] = f'/register/{user["username"]}'
             return response
             # return RedirectResponse(url="/register/"+ user["username"], status_code=status.HTTP_302_FOUND)
-        session_id = create_session(user["id"])
+        session_id = create_session(user["username"])
         # Create a response object for setting a cookie
         # response = RedirectResponse(url="/users/" + user["username"], status_code=status.HTTP_302_FOUND)
         # Set the session_id in a cookie
         response = Response(content="موقف", status_code=200)
         response.headers['HX-Redirect'] = '/users/me'
-        response.set_cookie(key="session_id", value=session_id, httponly=True, max_age=3 * 3600)  # httponly=True is recommended for security
-        response.set_cookie(key="username", value=user["username"], httponly=True, max_age=3 * 3600)  # httponly=True is recommended for security
+        response.set_cookie(key="session_id", value=session_id, httponly=True, max_age=3 * 3600)
+        response.set_cookie(key="username", value=user["username"], httponly=True, max_age=3 * 3600)
+        
         return response
     except HTTPException as e:
         return f'''<p>{e}<p>'''
@@ -184,14 +186,14 @@ async def logout(request: Request,response: Response, session_id: Annotated[str 
     # Clear the session cookie client-side
     response.delete_cookie(key="session_id")
     response.delete_cookie(key="username")
-    response_to = Response(content="موقف", status_code=200)
-    response_to.headers['HX-Redirect'] = '/login'
-    response_to.delete_cookie(key="session_id")
-    response_to.delete_cookie(key="username")
+    # response_to = Response(content="موقف", status_code=200)
+    response.headers['HX-Redirect'] = '/login'
+    # response_to.delete_cookie(key="session_id")
+    # response_to.delete_cookie(key="username")
 
     # return HTML content to swap an elemnt usi
     
-    return response_to   
+    return response
 # user not found
 @app.get("/notfound/{username}", response_class=HTMLResponse)
 def notfound(username: str, request: Request):
@@ -354,3 +356,44 @@ async def drugname_salt(
     return templates.TemplateResponse(
         "druglist.html", {"request": request, "last": drugname + last, "total": total}
     )
+
+
+
+####################### CHARTS ####################
+
+@app.get("/api/heartrate", response_class=HTMLResponse)
+async def get_chart(hx_request: Annotated[str|None, Header()] ,response: Response, beg: str | None = None, end: str | None = None, session: AsyncSession = Depends(get_session),session_id: Annotated[str | None, Cookie()] = None):
+
+
+    if not session_id or session_id not in sessions and hx_request:
+        response = Response(content="موقف", status_code=200)
+        response.headers['HX-Redirect'] = '/login'
+        return response
+    if not session_id or session_id not in sessions and not hx_request:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+
+    if session_id and session_id in sessions:
+        username = sessions[session_id]
+        query = text('''
+        SELECT DISTINCT TIMESTAMP, HEART_RATE, STEPS
+        FROM MI_BAND_ACTIVITY_SAMPLE 
+        WHERE USER_ID = :user_id
+        AND TIMESTAMP BETWEEN (1706873340 - 86400) and 1706873340;
+        ''')
+        async with session.begin():
+            query_result = await session.execute(query, params={"user_id": username})
+            res_table = [res for res in query_result.fetchall()]
+            #print(res_table)
+
+        
+    #return {"msg": "success"}
+
+        x_data = [x[1] for x in res_table]
+        y_data = [y[0] for y in res_table]
+
+        # x_data = [x  for x in range(100)]
+        # y_data = [randint(1, 50)  for y in range(100)]
+
+        
+        return make_chart(x_data=y_data, y_data=x_data)
+
