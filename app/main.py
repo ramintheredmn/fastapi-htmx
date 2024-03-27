@@ -93,7 +93,8 @@ async def receive(request: Request, session: AsyncSession = Depends(get_session)
 
 # define the root route, that returns the index.html
 @app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request, username: Annotated[str|None, Cookie()] = None, session_id: Annotated[str|None, Cookie()] = None):
+async def read_root(request: Request, session_id: Annotated[str|None, Cookie()] = None):
+    username = sessions[session_id] if session_id and session_id in sessions else None
     return templates.TemplateResponse("index.html", {"request": request, "username": username, "session_id": session_id})
 
 
@@ -230,9 +231,9 @@ def notfound(username: str, request: Request):
 
 
 # register the user that has user_id in the btable
-@app.get("/register/{username}", response_class=HTMLResponse)
-async def register(request: Request, username: str):
-    return templates.TemplateResponse("register.html", {"request": request, "username": username})
+@app.get("/register/{user}", response_class=HTMLResponse)
+async def register(request: Request, user: str):
+    return templates.TemplateResponse("register.html", {"request": request, "user": user})
 
 
 # register helper function
