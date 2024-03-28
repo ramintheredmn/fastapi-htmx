@@ -1,4 +1,5 @@
 from uuid import uuid4
+import json
 from app.drugsearch import df, drugs_dict
 from app.models import app, lessValueError, logger, sameValueError, templates, RegistrationForm, SinginForm
 from typing import Any, Annotated
@@ -104,8 +105,11 @@ async def read_root(request: Request, session_id: Annotated[str|None, Cookie()] 
 
 
 # login page defination
-@app.get("/login", response_class=HTMLResponse)
-async def login(request: Request):
+@app.get("/login/", response_class=HTMLResponse)
+async def login(request: Request, msg: str | None = None):
+    if msg == "successregister":
+        return templates.TemplateResponse("login.html", {"request": request, "msg": "ثبت نام شما با موفقیت انجام ش، لطفا وارد شوید"})
+
     return templates.TemplateResponse("login.html", {"request": request})
 
 async def extract_bulk_user_ids(session: AsyncSession) -> list:
@@ -246,20 +250,20 @@ async def register_form(password: Annotated[str, Form()],
     birthdate: Annotated[Any, Form()],
     height: Annotated[str, Form()],
     weight: Annotated[str, Form()],
-    medication: Annotated[str | None, Form()] = None,
-    comorbitidies: Annotated[str | None, Form()] = None,
                         ):
-    return {"username": username, "password": password, "sex":sex, "name": name, "lastname": lastname, "birthdate": birthdate, "height": height, "weight": weight, "medication": medication, "comorbitidies": comorbitidies}
+    return {"username": username, "password": password, "sex":sex, "name": name, "lastname": lastname, "birthdate": birthdate, "height": height, "weight": weight}
 
 # user form
-@app.post("/api/register/{randomnumber}", response_class=HTMLResponse)
+@app.post("/api/register/{randomnumber}/", response_class=HTMLResponse)
 async def register_info(
+    response: Response,
     request: Request,
     randomnumber: int,
     session: AsyncSession = Depends(get_session),
     form_data = Depends(register_form)
 
 ):  # username from the login form
+    drugs_dict = {index:drug for index, drug in enumerate(temp_drugs_per_user[randomnumber])}
     query = text(
         "INSERT INTO users (USER_ID ,PASSWORD, SEX, name, lastname, BIRTHDATE, HEIGHT, WEIGHT, MEDICATIONS, COMORBIDITIES) VALUES (:USERNAME, :PASSWORD, :SEX, :name, :lastname, :BIRTHDATE, :HEIGHT, :WEIGHT, :MEDICATIONS, :COMORBITIDIES)"
     )
@@ -268,13 +272,14 @@ async def register_info(
     if request:
         print(request)
     try:
-        validated_form_data = RegistrationForm(**form_data)
+        validated_form_data = RegistrationForm(**form_data,medication=drugs_dict)
+        print(validated_form_data)
         
     except lessValueError as e:
         return f'''<p>رمز عبور باید حداقل ۸ کاراکتر باشد</p>'''
     except sameValueError as e:
         return f'''<p>رمز عبور نمی‌تواند با نام کاربری برابر باشد</p>'''
-
+    print("validation is true")
     try:
     # update the user table with the new data
         async with session.begin():
@@ -289,17 +294,20 @@ async def register_info(
                     "BIRTHDATE": validated_form_data.birthdate,
                     "HEIGHT": validated_form_data.height,
                     "WEIGHT": validated_form_data.weight,
-                    "MEDICATIONS": validated_form_data.medication,
-                    "COMORBITIDIES": validated_form_data.comorbitidies,
+                    "MEDICATIONS": json.dumps(validated_form_data.medication),
+                    "COMORBITIDIES": json.dumps(validated_form_data.comorbitidies),
                 },
             )
-            await session.commit()
     except Exception as e:
         print("error in db", str(e))
         await session.rollback()
         return f'''<p>{e}</p>'''
-    return f'''<p>درخواست شماره {randomnumber} موفق</p>
-    <a href="/login">لطفا وارد شوید</a>
+    print("till now everythig is great, redirect is next")
+    return '''
+    <div class="flex flex-col items-center justify-center w-auto">
+        <span>موفق!</span>
+        <a class="text-blue-500 hover:underline" href="/login/?msg=successregister">وارد شوید</a>
+    </div>
     '''
 
 
@@ -378,11 +386,27 @@ async def drugname_salt(
 ):
     drugspec = [drugname, salt, dosageform, strength, roa]
     totaldrugslist = await totaldrugperuser(randomnumber, drugspec)
-    print("returning druglist html? ", "\n drugs so far: ", totaldrugslist)
     return templates.TemplateResponse(
-        "drugpartial/druglist.html", {"request": request, "randomnumber": randomnumber, "totaldrugslist": totaldrugslist}
+        "drugpartial/druglist.html", {"request": request, "randomnumber": randomnumber, "totaldrugslist": totaldrugslist, "drugname": drugname}
     )
 
+@app.delete("/api/{randomnumber}/delete/{drugname}")
+async def delete_drug(randomnumber: int, drugname: str):
+    # Check if the user exists
+    if randomnumber in temp_drugs_per_user:
+        original_count = len(temp_drugs_per_user[randomnumber])
+        temp_drugs_per_user[randomnumber] = [
+            drug for drug in temp_drugs_per_user[randomnumber]
+            if drugname not in drug
+        ]
+        # Check if a drug was removed
+        if len(temp_drugs_per_user[randomnumber]) < original_count:
+            return '''<p class="bg-green-400">داروی مورد نظر با موفقییت حذف شد<p>'''
+        else:
+            raise HTTPException(status_code=404, detail="Drug not found")
+    else:
+        raise HTTPException(status_code=404, detail="User not found")
+    
 
 
 ####################### CHARTS ####################

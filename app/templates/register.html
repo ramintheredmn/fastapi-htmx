@@ -5,8 +5,8 @@
 
 {% block content %}
 
-<form dir="rtl" hx-post="/api/register/{{randomnumber}}" hx-target="#result" hx-include='[name="username"]'
-  class="font-iransans-medium mx-[5%] md:mx-[20%]">
+<form dir="rtl" hx-post="/api/register/{{randomnumber}}" hx-target="#result" hx-swap="innerHTML"
+  hx-include='[name="username"]' class="font-iransans-medium mx-[5%] md:mx-[20%]">
   <!-- this is going to be to col in mid size screen and bigger -->
   <div id="formfirst" class="grid p-6 gap-4 mb-4 md:grid-cols-2">
     <div>
@@ -74,9 +74,9 @@
     <button class="button" type="submit">
       ثبت نام
     </button>
+    <div id="result"></div>
   </div>
 </form>
-<div id="result"></div>
 
 
 {% endblock %}

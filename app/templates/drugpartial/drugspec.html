@@ -1,30 +1,46 @@
 <div class="card p-2 relative text-xl overflow-x-hidden h-48 overflow-y-clip" id="target">
   <div class="grid grid-cols-2 grid-rows-5 gap-4 mx-auto ml-5">
-    <form hx-post="/api/{{randomnumber}}/search/{{drugname}}" hx-target="#target" hx-swap="innerHTML">
-      <div class="flex flex-col col-span-1 row-span-4">
-        <select>
-          {% for roa in list_data.roa %}
-          <option>{{roa}}</option>
-          {% endfor %}
-        </select>
-        <select>
-          {% for strength in list_data.strength %}
-          <option>{{strength}}</option>
-          {% endfor %}
-        </select>
-        <select>
-          {% for form in list_data.dosageform %}
-          <option>{{form}}</option>
-          {% endfor %}
-        </select>
-        <select name="salt">
-          {% for salt in list_data.salt %}
-          <option>{{salt}}</option>
-          {% endfor %}
-        </select>
-        <button type="submit" class="button p-0 w-auto mx-10">ثیت این دارو</button>
-      </div>
-    </form>
+    <div x-data="{
+    roa: '{{list_data.roa[0]}}',
+    strength: '{{list_data.strength[0]}}',
+    dosageform: '{{list_data.dosageform[0]}}',
+    salt: '{{list_data.salt[0]}}',
+  }">
+      <form hx-post="/api/{{randomnumber}}/search/{{drugname}}" hx-target="#target" hx-swap="innerHTML">
+        <div class="flex flex-col col-span-1 row-span-4">
+          <!-- Bind each select to a property -->
+          <select x-model="roa">
+            {% for roa in list_data.roa %}
+            <option>{{roa}}</option>
+            {% endfor %}
+          </select>
+          <select x-model="strength">
+            {% for strength in list_data.strength %}
+            <option>{{strength}}</option>
+            {% endfor %}
+          </select>
+          <select x-model="dosageform">
+            {% for form in list_data.dosageform %}
+            <option>{{form}}</option>
+            {% endfor %}
+          </select>
+          <select x-model="salt">
+            {% for salt in list_data.salt %}
+            <option>{{salt}}</option>
+            {% endfor %}
+          </select>
+
+          <!-- Hidden Inputs directly bound to the same properties -->
+          <input type="hidden" name="roa" x-bind:value="roa">
+          <input type="hidden" name="strength" x-bind:value="strength">
+          <input type="hidden" name="dosageform" x-bind:value="dosageform">
+          <input type="hidden" name="salt" x-bind:value="salt">
+          <!-- No need for a hidden input for 'salt' as it's already a named select -->
+
+          <button type="submit" class="button p-0 w-auto mx-10">ثبت این دارو</button>
+        </div>
+      </form>
+    </div>
     <div class="col-span-1 mt-1 space-y-4 font-iransans-bold text-center">
       <label class="label">راه مصرف</label>
       <label class="label">دوز</label>

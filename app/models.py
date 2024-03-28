@@ -41,8 +41,8 @@ class RegistrationForm(BaseModel):
     birthdate: Any
     height: int
     weight: int
-    medication: Json | None = None
-    comorbitidies: Json | None = None
+    medication: dict | None = None
+    comorbitidies: dict | None = None
 
     # Validator for password length
     @validator('password')
