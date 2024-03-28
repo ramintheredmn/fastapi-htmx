@@ -1,0 +1,37 @@
+<div class="card p-2 relative text-xl overflow-x-hidden h-48 overflow-y-clip" id="target">
+  <div class="grid grid-cols-2 grid-rows-5 gap-4 mx-auto ml-5">
+    <form hx-post="/api/{{randomnumber}}/search/{{drugname}}" hx-target="#target" hx-swap="innerHTML">
+      <div class="flex flex-col col-span-1 row-span-4">
+        <select>
+          {% for roa in list_data.roa %}
+          <option>{{roa}}</option>
+          {% endfor %}
+        </select>
+        <select>
+          {% for strength in list_data.strength %}
+          <option>{{strength}}</option>
+          {% endfor %}
+        </select>
+        <select>
+          {% for form in list_data.dosageform %}
+          <option>{{form}}</option>
+          {% endfor %}
+        </select>
+        <select name="salt">
+          {% for salt in list_data.salt %}
+          <option>{{salt}}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="button p-0 w-auto mx-10">ثیت این دارو</button>
+      </div>
+    </form>
+    <div class="col-span-1 mt-1 space-y-4 font-iransans-bold text-center">
+      <label class="label">راه مصرف</label>
+      <label class="label">دوز</label>
+      <label class="label">شکل دارویی</label>
+      <label for="salt" class="label">نمک</label>
+      <span dir="rtl" class="font-iransans-ultra-light text-sm">مشخصات داروی {{drugname}}</span>
+
+    </div>
+  </div>
+</div>

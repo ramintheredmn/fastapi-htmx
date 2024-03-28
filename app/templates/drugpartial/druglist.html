@@ -1,0 +1,16 @@
+<div>
+  <h1 dir="rtl" class="border-b font-iransans-light">لیست دارو های مصرفی شما : </h1>
+  <ul>
+    {% for option in totaldrugslist %}
+    <li class="border-b flex justify-between items-center mx-10">
+      <span>
+        {{option}}
+      </span>
+      <span class="text-red-700 text-sm" hx-trigger="click" hx-delete="">
+        حذف
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  <h1 dir="rtl" class="border-t font-iransans-light">برای افزودن مورد دیگر سرچ کنید</h1>
+</div>

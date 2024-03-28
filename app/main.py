@@ -3,13 +3,13 @@ from app.drugsearch import df, drugs_dict
 from app.models import app, lessValueError, logger, sameValueError, templates, RegistrationForm, SinginForm
 from typing import Any, Annotated
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Form, Header, Request, HTTPException, Depends, status, Cookie, Response
+from fastapi import Body, Form, Header, Request, HTTPException, Depends, status, Cookie, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from app.config import get_session
 from app.charts import make_chart
 from sqlalchemy import text
 import pandas as pd
-
+import random
 # sessions in-memmory database that will contain session-id and user_id of the user that is signed-in
 
 sessions = {}
@@ -233,7 +233,8 @@ def notfound(username: str, request: Request):
 # register the user that has user_id in the btable
 @app.get("/register/{user}", response_class=HTMLResponse)
 async def register(request: Request, user: str):
-    return templates.TemplateResponse("register.html", {"request": request, "user": user})
+    randomnumber = random.randint(0, 10000000)
+    return templates.TemplateResponse("register.html", {"request": request, "user": user, "randomnumber": randomnumber})
 
 
 # register helper function
@@ -251,9 +252,10 @@ async def register_form(password: Annotated[str, Form()],
     return {"username": username, "password": password, "sex":sex, "name": name, "lastname": lastname, "birthdate": birthdate, "height": height, "weight": weight, "medication": medication, "comorbitidies": comorbitidies}
 
 # user form
-@app.post("/api/register", response_class=HTMLResponse)
+@app.post("/api/register/{randomnumber}", response_class=HTMLResponse)
 async def register_info(
     request: Request,
+    randomnumber: int,
     session: AsyncSession = Depends(get_session),
     form_data = Depends(register_form)
 
@@ -296,7 +298,7 @@ async def register_info(
         print("error in db", str(e))
         await session.rollback()
         return f'''<p>{e}</p>'''
-    return '''<p>ثبت نام با موقفیت انجام شد</p>
+    return f'''<p>درخواست شماره {randomnumber} موفق</p>
     <a href="/login">لطفا وارد شوید</a>
     '''
 
@@ -321,18 +323,20 @@ async def register_info(
 
 # drug activr search
 # htmx hits the /api/drug_search when each time a key is pressed and sends the search query
-@app.post("/api/drug_search", response_class=HTMLResponse)
+@app.post("/api/{randomnumber}/drug_search", response_class=HTMLResponse)
 # query: str = Form(...) is the query that htmx sends Form tags in the html contains names and herer we can unpack that hashtable like data structure
-async def drug_search(request: Request, query: str = Form(...)):
+async def drug_search(randomnumber: int, request: Request, query: str = Form(...)):
     filtered_df: Any = df[df["Drug Name"].str.contains(query, case=False)]
     drugs = filtered_df["Drug Name"].drop_duplicates().tolist()
     return templates.TemplateResponse(
-        "drugpartial/search.html", {"request": request, "options": drugs}
+        "drugpartial/search.html", {"request": request, "randomnumber": randomnumber ,"options": drugs}
     )
 
 
-@app.post("/api/search/drugname", response_class=HTMLResponse)
-async def drugname(request: Request, drugname: str = Form(...)):
+@app.post("/api/{randomnumber}/search/drugname", response_class=HTMLResponse)
+async def drugname(request: Request, randomnumber: int,drugname: str = Form(...)):
+    if request:
+        print(drugname, "type :", type(drugname))
     drugname_filtered_df: Any = df[df["Drug Name"] == str(drugname)]
     salts = drugname_filtered_df["Salt"].drop_duplicates().tolist()
     dosageforms = drugname_filtered_df["Dosage Form"].drop_duplicates().tolist()
@@ -346,42 +350,37 @@ async def drugname(request: Request, drugname: str = Form(...)):
     }
     for key, value in list_data.items():
         if str(value[0]) == "nan":
-            value[0] = f"No particular {key} for this drug"
+            value[0] = None
+    print(list_data)
+
     return templates.TemplateResponse(
-        "drugInfo.html",
-        {
-            "request": request,
-            "drugname": drugname,
-            "salts": salts,
-            "dosageforms": dosageforms,
-            "strengths": strengths,
-            "roas": roas,
-        },
+        "drugpartial/drugspec.html", {"request": request, "randomnumber": randomnumber,"list_data": list_data, "drugname": drugname}
     )
 
+temp_drugs_per_user = {}
+async def totaldrugperuser(randnum:int, druglist: list) -> dict:
+    if randnum not in temp_drugs_per_user:
+        temp_drugs_per_user[randnum] = []
+    temp_drugs_per_user[randnum].append(" ".join(list(filter(lambda x: x is not None, druglist))))
+    print(temp_drugs_per_user[randnum][0], "type: ", type(temp_drugs_per_user[randnum][0]))
+    
 
-@app.post("/api/search/drugname/druginfo", response_class=HTMLResponse)
+    return temp_drugs_per_user[randnum]
+@app.post("/api/{randomnumber}/search/{drugname}", response_class=HTMLResponse)
 async def drugname_salt(
     request: Request,
-    drugname: str = Form(...),
-    salt: str = Form(...),
-    dosageform: str = Form(...),
-    strength: str = Form(...),
-    roa: str = Form(...),
+    randomnumber: int,
+    drugname: str,
+    salt: Annotated[str|None, Form()] = None,
+    dosageform: Annotated[str|None, Form()] = None,
+    strength: Annotated[str|None, Form()] = None,
+    roa: Annotated[str|None, Form()] = None,
 ):
-    last = ""
-    if "No particular" not in salt:
-        last += f", {salt}"
-    if "No particular" not in dosageform:
-        last += f", {dosageform}"
-    if "No particular" not in strength:
-        last += f", {strength}"
-    if "No particular" not in roa:
-        last += f", {roa}"
-    drugs_dict[drugname] = last
-    total = drugs_dict
+    drugspec = [drugname, salt, dosageform, strength, roa]
+    totaldrugslist = await totaldrugperuser(randomnumber, drugspec)
+    print("returning druglist html? ", "\n drugs so far: ", totaldrugslist)
     return templates.TemplateResponse(
-        "druglist.html", {"request": request, "last": drugname + last, "total": total}
+        "drugpartial/druglist.html", {"request": request, "randomnumber": randomnumber, "totaldrugslist": totaldrugslist}
     )
 
 

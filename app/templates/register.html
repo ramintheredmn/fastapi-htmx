@@ -5,9 +5,10 @@
 
 {% block content %}
 
-<form dir="rtl" hx-post="/api/register" hx-target="#result" hx-include='[name="username"]'
-  class="font-iransans-medium m-[10%]">
-  <div id="formfirst" class="grid bg-teal-500 p-6 gap-6 mb-6 md:grid-cols-2">
+<form dir="rtl" hx-post="/api/register/{{randomnumber}}" hx-target="#result" hx-include='[name="username"]'
+  class="font-iransans-medium mx-[5%] md:mx-[20%]">
+  <!-- this is going to be to col in mid size screen and bigger -->
+  <div id="formfirst" class="grid p-6 gap-4 mb-4 md:grid-cols-2">
     <div>
       <label for="user_id" class="label">نام کاربری</label>
       <input type="text" name="username" value="{{user}}" readonly required id="user_id" class="input" />
@@ -45,8 +46,6 @@
             <span class="ml-2">دیگر</span>
           </label>
         </div>
-
-
       </div>
     </fieldset>
     <div>
@@ -61,17 +60,17 @@
       <label for="weight" class="label">وزن به کیلوگرم</label>
       <input type="text" name="weight" class="input" required pattern="[0-9]+">
     </div>
-
   </div>
-  <div id="druglist" class="mb-6">
+  <!-- here is the drug iput part and it is always the one col -->
+  <div id="druglist" class="mb-4 mx-5">
     <label class="label">نام دارو</label>
-    <input name="query" hx-post="/api/drug_search" hx-target="#search" hx-swap="innerHTML"
+    <input name="query" hx-post="/api/{{randomnumber}}/drug_search" hx-target="#search" hx-swap="innerHTML"
       hx-trigger="keyup delay:500ms" type="text" class="input" id="drugsearch">
-
-    <div id="search" class="w-auto"></div>
-
+    <div id="search" dir="ltr"
+      class="max-w-full font-iransans-light htmx-swaping:opacity-100 transition-opacity duration-300"
+      x-data='{drugs: "{}"}'></div>
   </div>
-  <div class="flex items-center justify-between">
+  <div class="flex items-center justify-center">
     <button class="button" type="submit">
       ثبت نام
     </button>

@@ -1,5 +1,13 @@
-<ul>
-  {% for drug in options %}
-  <li>{{drug}}</li>
-  {% endfor %}
-</ul>
+<div class="card p-2 relative text-xl overflow-x-hidden h-48 overflow-y-scroll" id="targetdrugspec">
+  <table class="w-full text-gray-500">
+    <tbody>
+      {% for drug in options %}
+      <tr class="bg-white border-b cursor-pointer" hx-post="/api/{{randomnumber}}/search/drugname"
+        hx-vals='{"drugname" : "{{drug}}" }' hx-target="#targetdrugspec" hx-swap="outerHTML">
+        <td class="truncate" name="drugname">{{drug}}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
