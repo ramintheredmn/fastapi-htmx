@@ -17,11 +17,11 @@
   <div class="card p-4 row-span-1 mx-[20%] space-y-4 md:mt-4 md:col-span-2 md:mx-[10%]">
     <form hx-post="/api/login_info" hx-target="#result" hx-swap="innerHTML" hx-indicator="#dot"
       class="flex flex-col items-center justify-center">
-      <div class="mb-4 flex gap-2 itmes-center font-iransans-medium">
-        <label class="label w-[5rem] mt-4" for="username">یوزر آیدی</label>
+      <div class="mb-4 flex flex-row gap-2 itmes-center justify-center font-iransans-medium">
+        <label class="label w-[5rem] h-4 mt-4" for="username">یوزرآیدی</label>
         <input class="input" name="username" id="username" type="text" required">
       </div>
-      <div class="mb-4 flex gap-2 itmes-center font-iransans-medium">
+      <div class="mb-4 flex flex-row gap-2 itmes-center justify-center font-iransans-medium">
         <label class="label w-[5rem] mt-2" for="password">رمز عبور</label>
         <input name="password" id="password" type="text" required class="input">
       </div>
