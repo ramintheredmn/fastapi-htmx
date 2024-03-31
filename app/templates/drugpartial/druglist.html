@@ -1,13 +1,13 @@
-<div class="text-sm">
+<div class="text-sm md:text-lg">
   <h1 dir="rtl" class="border-b font-iransans-bold">لیست دارو های مصرفی شما : </h1>
   <ul>
     {% for option in totaldrugslist %}
     <li id="drugrow" class="border-b flex justify-between items-center mx-10 font-iransans-light [&>p]:bg-green-400">
-      <span>
+      <span id="drugname">
         {{option}}
       </span>
       <span class="text-red-700 font-iransans-ultra-light cursor-pointer" hx-trigger="click"
-        hx-delete="/api/{{randomnumber}}/delete/{{drugname}}" hx-target="#drugrow" hx-swap="innerHTML">
+        hx-delete="/api/{{randomnumber}}/delete?drugname={{option}}" hx-target="closest li" hx-swap="innerHTML">
         حذف
       </span>
     </li>

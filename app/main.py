@@ -370,7 +370,6 @@ async def totaldrugperuser(randnum:int, druglist: list) -> dict:
     if randnum not in temp_drugs_per_user:
         temp_drugs_per_user[randnum] = []
     temp_drugs_per_user[randnum].append(" ".join(list(filter(lambda x: x is not None, druglist))))
-    print(temp_drugs_per_user[randnum][0], "type: ", type(temp_drugs_per_user[randnum][0]))
     
 
     return temp_drugs_per_user[randnum]
@@ -390,7 +389,7 @@ async def drugname_salt(
         "drugpartial/druglist.html", {"request": request, "randomnumber": randomnumber, "totaldrugslist": totaldrugslist, "drugname": drugname}
     )
 
-@app.delete("/api/{randomnumber}/delete/{drugname}")
+@app.delete("/api/{randomnumber}/delete")
 async def delete_drug(randomnumber: int, drugname: str):
     # Check if the user exists
     if randomnumber in temp_drugs_per_user:
@@ -401,7 +400,7 @@ async def delete_drug(randomnumber: int, drugname: str):
         ]
         # Check if a drug was removed
         if len(temp_drugs_per_user[randomnumber]) < original_count:
-            return '''<p class="bg-green-400">داروی مورد نظر با موفقییت حذف شد<p>'''
+            return "<p>داروی مورد نظر با موفقییت حذف شد<p>"
         else:
             raise HTTPException(status_code=404, detail="Drug not found")
     else:
