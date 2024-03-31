@@ -420,7 +420,7 @@ async def get_chart(hx_request: Annotated[str|None, Header()] ,response: Respons
         return response
     if not session_id or session_id not in sessions and not hx_request:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-
+    # the past day
     if session_id and session_id in sessions:
         username = sessions[session_id]
         query = text('''
