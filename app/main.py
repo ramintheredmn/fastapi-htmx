@@ -431,7 +431,7 @@ async def get_chart(hx_request: Annotated[str|None, Header()] ,response: Respons
             SELECT MAX(TIMESTAMP)
             FROM MI_BAND_ACTIVITY_SAMPLE
             WHERE USER_ID = :user_id
-            ) - INTERVAL 1 DAY
+            ) - 86400
             AND (
             SELECT MAX(TIMESTAMP)
             FROM MI_BAND_ACTIVITY_SAMPLE
