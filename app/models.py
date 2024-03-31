@@ -1,21 +1,17 @@
 from fastapi import FastAPI
-from typing import Optional, Any
+from typing import Any
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from passlib.context import CryptContext
 import logging
 from pydantic import BaseModel, validator
 import datetime
 from persiantools.jdatetime import JalaliDate
-from pydantic.types import Json
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 # define the app, an instance of the Fastapi() class
-app = FastAPI()
+app = FastAPI(docs_url=None, redoc_url=None)
 # mount the static folder to be used by fastapi
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 # define the templates dir

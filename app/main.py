@@ -425,9 +425,18 @@ async def get_chart(hx_request: Annotated[str|None, Header()] ,response: Respons
         username = sessions[session_id]
         query = text('''
         SELECT DISTINCT TIMESTAMP, HEART_RATE, STEPS
-        FROM MI_BAND_ACTIVITY_SAMPLE 
+        FROM MI_BAND_ACTIVITY_SAMPLE
         WHERE USER_ID = :user_id
-        AND TIMESTAMP BETWEEN (1706873340 - 86400) and 1706873340;
+        AND TIMESTAMP BETWEEN (
+            SELECT MAX(TIMESTAMP)
+            FROM MI_BAND_ACTIVITY_SAMPLE
+            WHERE USER_ID = :user_id
+            ) - INTERVAL 1 DAY
+            AND (
+            SELECT MAX(TIMESTAMP)
+            FROM MI_BAND_ACTIVITY_SAMPLE
+            WHERE USER_ID = :user_id
+            );
         ''')
         async with session.begin():
             query_result = await session.execute(query, params={"user_id": username})
