@@ -5,7 +5,7 @@
 {% block content %}
 
 <div id="main" dir="rtl" class="grid grid-rows-2 md:grid-cols-4 max-w-7xl mx-auto mt-10 space-y-4">
-  <div class="card p-4 row-span-1 mx-[20%] space-y-4 md:mt-4 md:col-span-2 md:mx-[10%]">
+  <div class="card p-4 row-span-1 mx-[20%] space-y-4 md:mt-4 md:col-span-2 md:mx-[10%] max-h-80">
     <h2 class="text-3xl font-iransans-bold">ورود</h2>
     {% if msg %}
     <p class="font-iransans-ultra-light">{{msg}}</p>
@@ -14,7 +14,7 @@
       صفحه ثبت نام ههدایت خواهید شد</p>
     {% endif %}
   </div>
-  <div class="card p-4 row-span-1 mx-[20%] space-y-4 md:mt-4 md:col-span-2 md:mx-[10%]">
+  <div class="card p-4 row-span-1 mx-[20%] space-y-4 md:mt-4 md:col-span-2 md:mx-[10%] max-h-auto">
     <form hx-post="/api/login_info" hx-target="#result" hx-swap="innerHTML" hx-indicator="#dot"
       class="flex flex-col items-center justify-center">
       <div class="mb-4 flex flex-row gap-2 itmes-center justify-center font-iransans-medium">
@@ -25,11 +25,12 @@
         <label class="label w-[5rem] mt-2" for="password">رمز عبور</label>
         <input name="password" id="password" type="text" required class="input">
       </div>
-      <div class="flex items-center justify-center">
+      <div class="flex flex-row items-center justify-center">
 
         <button type="submit" class="button text-center font-iransans-bold">ورود</button>
+        <img id="dot" class="htmx-indicator h-8 w-8 mr-8" src="/static/imgs/spinner.gif"></img>
+
       </div>
-      <img id="dot" class="htmx-indicator h-8 w-8" src="/static/imgs/spinner.gif"></img>
     </form>
     <div id="result" dir="rtl" class="font-iransans-light flex-1"></div>
 

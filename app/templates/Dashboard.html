@@ -11,7 +11,8 @@
     <span x-text='date'></span>
 
   </div>
-  <div id="dashboard" dir="rtl" class="grid grid-cols-12 gap-4 md:gap-0" x-data="{ hr: true, sl: false }">
+  <div id="dashboard" dir="rtl" class="grid grid-cols-12 gap-4 md:gap-0"
+    x-data="{ hr: true, sl: false, dialopen: false, setting: false }">
     <aside
       class="card w-auto md:w-auto md:my-auto mx-auto md:mr-4 px-2 md:px-0 bg-gray-700 col-span-full md:col-span-1 order-1 mt-2">
       <div class="flex flex-row md:flex-col items-center gap-2 justify-center font-iransans-bold mt-2">
@@ -19,18 +20,76 @@
         <button class="button px-1 mx-1 py-0" @click="[sl = true, hr = false]">خواب</button>
       </div>
     </aside>
-    <main class="col-span-full md:col-span-11 order-2 md:mt-4 mx-4 md:ml-4 md:mr-0 [&>div]:w-full [&>div]:h:full">
-      <div x-show="sl" id="sleep">
-        sleep
+    <main class="col-span-full md:col-span-11 order-2 mt-0 md:mt-4 mx-4 md:ml-4 md:mr-0 [&>div]:w-full [&>div]:h:full">
+      <!-- SleepAnalysisChart -->
+      <div x-show="sl" class="card flex flex-col items-center justify-center" id="sleep" hx-get="/api/sleep"
+        hx-trigger="load, every 300s" hx-indicator="#slwait" hx-target="#slchart"
+        hx-swap="innerHTML swap:1s transition:true">
+        <div id="slchart" class="w-full h-full">
+        </div>
+        <img id="slwait" class="htmx-indicator h-8 w-8" src="/static/imgs/spinner.gif"></img>
       </div>
+
+
+
+      <!-- HeartRateChart -->
       <div x-show="hr" class="card flex flex-col items-center justify-center" id="heartrate" hx-get="/api/heartrate"
         hx-trigger="load, every 300s" hx-indicator="#hrwait" hx-target="#hrchart"
         hx-swap="innerHTML swap:1s transition:true">
         <div id="hrchart" class="w-full h-full">
 
         </div>
-        <img id="hrwait" class="htmx-indicator h-8 w-8" src="/static/imgs/spinner.gif"></img>
-      </div>
+
+
+        <!-- setting of the chart -->
+        <div class="flex flex-row font-iransans-ultra-light">
+          <img id="hrwait" class="htmx-indicator h-8 w-8" src="/static/imgs/spinner.gif"></img>
+          <button class="flex items-center justify-center" @click="setting = !setting">
+            <img x-bind:class="setting ? 'rotate-180 duration-150' : '' " class="w-4"
+              src="/static/imgs/expand-arrow--v1.png" alt="expand-arrow--v1" />
+            <span>تنظیمات چارت</span>
+          </button>
+        </div>
+
+        <div name="hrchartsetting" x-show="setting" x-cloak
+          class="flex flex-row items-center justify-center font-iransans-ultra-light mb-1 bg-gray-200 w-full p-2">
+
+          <div class="flex flex-row items-center justify-center gap-2 ml-4">
+            <div class="flex flex-row">
+              <button class="button h-6 w-10 p-0 text-center m-0">اعمال</button>
+              <input class="input h-6 w-24" placeholder="میانگین وزنی">
+            </div>
+          </div>
+
+          <div
+            class="flex flex-col md:flex-row md:items-center md:justify-center gap-1 md:gap-2 mt-4 md:mt-2 mb-1 md:mb-0">
+            <button class="button h-6 w-10 p-0 text-center">امروز</button>
+            <button class="button h-6 w-20 p-0 text-center">این هفته</button>
+            <button class="button h-6 w-24 p-0 text-center">یک ساعت اخیر</button>
+            <button class="button h-6 w-20 p-0 text-center">۱۲ ساعت اخیر</button>
+            <button @click="dialopen = !dialopen" class="button h-6 w-20 p-0 text-center bg-red-500">تاریخ
+              دلخواه</button>
+          </div>
+
+          <div x-show="dialopen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" x-cloak>
+            <!-- Fix an element to cover the entire viewport (fixed and inset-0). -->
+            <dialog :open="dialopen" class="bg-white rounded shadow-lg z-50 p-2">
+              <form method="dialog" class="flex flex-col items-center justify-center font-iransans-medium">
+                <div>
+                  <label for="date" class="label">تاریخ شروع</label>
+                  <input name="start" type="text" data-jdp class="input h-6 w-20">
+                </div>
+                <div>
+                  <label for="date" class="label">تاریخ پایان</label>
+                  <input name="end" type="text" data-jdp class="input h-6 w-20">
+                </div>
+                <button @click="dialopen = false"
+                  class="button bg-red-700 h-6 w-10 p-0 text-center mb-2 mt-2">خروج</button>
+              </form>
+            </dialog>
+          </div>
+        </div>
+        <!-- End of setting -->
     </main>
   </div>
 </section>

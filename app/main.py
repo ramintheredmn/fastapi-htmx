@@ -441,16 +441,11 @@ async def get_chart(hx_request: Annotated[str|None, Header()] ,response: Respons
         async with session.begin():
             query_result = await session.execute(query, params={"user_id": username})
             res_table = [res for res in query_result.fetchall()]
-            #print(res_table)
 
         
-    #return {"msg": "success"}
 
         y_data = [x[1] for x in res_table]
         x_data = [int(y[0]) * 1000 for y in res_table]
-
-        # x_data = [x  for x in range(100)]
-        # y_data = [randint(1, 50)  for y in range(100)]
 
         
         return make_chart(x_data=x_data, y_data=y_data)
