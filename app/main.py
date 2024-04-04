@@ -207,7 +207,7 @@ def getuser(request: Request, username: Annotated[str | None, Cookie()] = None, 
     return templates.TemplateResponse("Dashboard.html", {"request": request, "username": username, "name": user["name"]})
 # logout route
 @app.get("/logout", response_class=HTMLResponse)
-async def logout(request: Request,response: Response, session_id: Annotated[str | None, Cookie()]):
+async def logout(response: Response, session_id: Annotated[str | None, Cookie()]):
     # Delete the session server-side as before
     if not session_id:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)    
@@ -256,7 +256,6 @@ async def register_form(password: Annotated[str, Form()],
 # user form
 @app.post("/api/register/{randomnumber}/", response_class=HTMLResponse)
 async def register_info(
-    response: Response,
     request: Request,
     randomnumber: int,
     session: AsyncSession = Depends(get_session),
@@ -411,7 +410,7 @@ async def delete_drug(randomnumber: int, drugname: str):
 ####################### CHARTS ####################
 
 @app.get("/api/heartrate", response_class=HTMLResponse)
-async def get_chart(hx_request: Annotated[str|None, Header()] ,response: Response, beg: str | None = None, end: str | None = None, session: AsyncSession = Depends(get_session),session_id: Annotated[str | None, Cookie()] = None):
+async def get_chart(response: Response, beg: str | None = None, end: str | None = None, session: AsyncSession = Depends(get_session),session_id: Annotated[str | None, Cookie()] = None, hx_request: Annotated[str|None, Header()] = None):
 
 
     if not session_id or session_id not in sessions and hx_request:
@@ -442,11 +441,8 @@ async def get_chart(hx_request: Annotated[str|None, Header()] ,response: Respons
             query_result = await session.execute(query, params={"user_id": username})
             res_table = [res for res in query_result.fetchall()]
 
-        
-
         y_data = [x[1] for x in res_table]
         x_data = [int(y[0]) * 1000 for y in res_table]
-
         
         return make_chart(x_data=x_data, y_data=y_data)
 

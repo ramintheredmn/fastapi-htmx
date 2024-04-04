@@ -1,6 +1,4 @@
 import plotly.graph_objects as go
-from datetime import datetime
-
 
 def make_chart(x_data, y_data):
     
@@ -12,6 +10,7 @@ def make_chart(x_data, y_data):
         xaxis={'type': 'date'}
         
     )
+    # set datetime to Iranian datetime
     fig.update_xaxes(calendar='jalali')
 
     html = fig.to_html(
