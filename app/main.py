@@ -499,12 +499,15 @@ async def raw_data(session: AsyncSession = Depends(get_session), dev_id:str | No
 
                 y_data = [x[1] for x in res_table]
                 x_data = [int(y[0]) * 1000 for y in res_table]
+                step_data = [step[2] for step in res_table]
 
-            return {"user_id": user_id, "x_data": x_data, "y_data": y_data}
+            return {"user_id": user_id, "x_data": x_data, "y_data": y_data, "step": step_data}
     if option is None:
         return {"error": "pls use the option query keyword, one of 'rawusers' 'users' 'heartrate' then provide the user_id in the 'user_id' query keyword -> in order to get th HR data"}
     else:
         return {"erros": "dev id not found"}
-
+@app.get("/api/help")
+def apihelp():
+    return {"help": "This is an api for developers to work with heartrate data usr '/api/raw_data?dev_id='your developer id'&option=rawusers OR users OR heartrate&user_id='if the option is 'heartrate' this one should be a valid user_id existed in the rawusers}"}
 
 
