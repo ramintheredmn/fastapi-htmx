@@ -1,4 +1,6 @@
 # Byte-compiled / optimized / DLL files
+.ipynb_checkpoints/
+.virtual_documents/
 tailwind.config.js
 app/static/src/tw.css
 input.css
