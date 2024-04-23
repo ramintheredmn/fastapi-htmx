@@ -1,11 +1,11 @@
 from uuid import uuid4
 import json
-from app.drugsearch import df, drugs_dict
+from app.drugsearch import df
 from app.models import app, lessValueError, logger, sameValueError, templates, RegistrationForm, SinginForm
 from typing import Any, Annotated
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Body, Form, Header, Request, HTTPException, Depends, status, Cookie, Response
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import Form, Header, Request, HTTPException, Depends, status, Cookie, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from app.config import get_session
 from app.charts import make_chart
 from sqlalchemy import text
@@ -355,7 +355,7 @@ async def drugname(request: Request, randomnumber: int,drugname: str = Form(...)
         "strength": strengths,
         "roa": roas,
     }
-    for key, value in list_data.items():
+    for _, value in list_data.items():
         if str(value[0]) == "nan":
             value[0] = None
     print(list_data)
@@ -445,4 +445,66 @@ async def get_chart(response: Response, beg: str | None = None, end: str | None 
         x_data = [int(y[0]) * 1000 for y in res_table]
         
         return make_chart(x_data=x_data, y_data=y_data)
+
+
+############################ api for developers ################################
+
+
+
+
+dev_ids = {'reza': 'reza1379'}
+@app.get("/api/raw_data", response_class=JSONResponse)
+async def raw_data(session: AsyncSession = Depends(get_session), dev_id:str | None = None, user_id:str | None = None, option: str | None = None, interval: int|None = None):
+    if dev_id in dev_ids.values():
+        if option == "users":
+            query = text('''
+                SELECT USER_ID FROM users 
+            ''')
+            async with session.begin():
+                query_result = await session.execute(query)
+                res_table = [res[0] for res in query_result.fetchall()]
+            return {"users_signed_up": res_table}
+        if option == "rawusers":
+            query = text('''
+                SELECT distinct USER_ID FROM MI_BAND_ACTIVITY_SAMPLE 
+            ''')
+            async with session.begin():
+                query_result = await session.execute(query)
+                res_table = [res[0] for res in query_result.fetchall()]
+            return {'all_users': res_table}
+        if option == "heartrate":
+            maininterval = 86400
+            if user_id:
+                if interval:
+                    maininterval = interval  
+                    
+            query = text('''
+                            SELECT DISTINCT TIMESTAMP, HEART_RATE, STEPS
+                            FROM MI_BAND_ACTIVITY_SAMPLE
+                            WHERE USER_ID = :user_id
+                            AND TIMESTAMP BETWEEN (
+                                SELECT MAX(TIMESTAMP)
+                                FROM MI_BAND_ACTIVITY_SAMPLE
+                                WHERE USER_ID = :user_id
+                                ) - :interval
+                                AND (
+                                SELECT MAX(TIMESTAMP)
+                                FROM MI_BAND_ACTIVITY_SAMPLE
+                                WHERE USER_ID = :user_id
+                                );
+            ''')
+            async with session.begin():
+                query_result = await session.execute(query, params={"user_id": user_id, "interval": maininterval})
+                res_table = [res for res in query_result.fetchall()]
+
+                y_data = [x[1] for x in res_table]
+                x_data = [int(y[0]) * 1000 for y in res_table]
+
+            return {"user_id": user_id, "x_data": x_data, "y_data": y_data}
+    if option is None:
+        return {"error": "pls use the option query keyword, one of 'rawusers' 'users' 'heartrate' then provide the user_id in the 'user_id' query keyword -> in order to get th HR data"}
+    else:
+        return {"erros": "dev id not found"}
+
+
 
