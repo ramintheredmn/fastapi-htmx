@@ -508,6 +508,6 @@ async def raw_data(session: AsyncSession = Depends(get_session), dev_id:str | No
         return {"erros": "dev id not found"}
 @app.get("/api/help")
 def apihelp():
-    return {"help": "This is an api for developers to work with heartrate data usr '/api/raw_data?dev_id='your developer id'&option=rawusers OR users OR heartrate&user_id='if the option is 'heartrate' this one should be a valid user_id existed in the rawusers}"}
+    return {"help": """This is an api for developers to work with heartrate data use '/api/raw_data?dev_id='your developer id'&option=rawusers OR users OR heartrate&user_id='if the option is 'heartrate' this one should be a valid user_id existed in the rawusers the Iranina FDA approved drug api will be availible soon"""}
 
 
