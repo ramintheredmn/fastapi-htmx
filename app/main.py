@@ -7,7 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Form, Header, Request, HTTPException, Depends, status, Cookie, Response
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from app.config import get_session
-from app.charts import make_chart
+from app.charts import make_chart , make_chart_radar_hr , make_chart_radar_step
+from app.Analyse import cut_empty_intervals , fixed_mean_calculation
+from app.sleepalgo import sleepstaging , binarysleep_with_denoise
 from sqlalchemy import text
 import pandas as pd
 import random
@@ -440,11 +442,17 @@ async def get_chart(response: Response, beg: str | None = None, end: str | None 
         async with session.begin():
             query_result = await session.execute(query, params={"user_id": username})
             res_table = [res for res in query_result.fetchall()]
+        df_HeartRate = pd.DataFrame(res_table, columns=['x_data', 'y_data', 'step'])
+        df_HeartRate['x_data'] = df_HeartRate['x_data'].astype(int) * 1000
+        df_HeartRate = cut_empty_intervals(df_HeartRate)
+        sleep_score = sleepstaging(df)
+        hr_mean_1 , hr_mean_2 , hr_mean_3 , hr_mean_4 , hr_mean_5 , step_mean_1 , step_mean_2 , step_mean_3 , step_mean_4 , step_mean_5 , step_quantile , hr_quantile , step_min , hr_min = fixed_mean_calculation(df_HeartRate)
+        # return  make_chart_radar_hr(hr_mean_1 , hr_mean_2 , hr_mean_3 , hr_mean_4 , hr_mean_5 , hr_quantile , hr_min)
+        # return make_chart_radar_step(step_mean_1 , step_mean_2 , step_mean_3 , step_mean_4 , step_mean_5 , step_quantile , step_min)
 
-        y_data = [x[1] for x in res_table]
-        x_data = [int(y[0]) * 1000 for y in res_table]
-        
-        return make_chart(x_data=x_data, y_data=y_data)
+        return make_chart(x_data=df_HeartRate['x_data'], y_data=df_HeartRate['y_data'])
+
+      
 
 
 ############################ api for developers ################################
