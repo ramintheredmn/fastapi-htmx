@@ -7,7 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Form, Header, Request, HTTPException, Depends, status, Cookie, Response
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from app.config import get_session
-from app.charts import make_chart
+from app.charts import make_chart , make_chart_radar_hr , make_chart_radar_step
+from app.Analyse import cut_empty_intervals , fixed_mean_calculation
+from app.sleepalgo import sleepstaging , binarysleep_with_denoise
 from sqlalchemy import text
 import pandas as pd
 import random
@@ -439,75 +441,23 @@ async def get_chart(response: Response, beg: str | None = None, end: str | None 
         ''')
         async with session.begin():
             query_result = await session.execute(query, params={"user_id": username})
-            res_table = [res for res in query_result.fetchall()]
+            query_res_all = query_result.fetchall()
 
-        y_data = [x[1] for x in res_table]
-        x_data = [int(y[0]) * 1000 for y in res_table]
-        
-        return make_chart(x_data=x_data, y_data=y_data)
+        stock_df_HeartRate = pd.DataFrame({'x_data': [int(res[0]) * 1000 for res in query_res_all],
+                                           'y_data': [res[1] for res in query_res_all],
+                                           'step': [res[2] for res in query_res_all]})
+        ##### !!!!!!!!!
+        # pls dont make changes here!
+        # the new approach includes leveraging HTMX libarary
+        # which is based on Hypermedia, this means that
+        # anything you can achive in the jupyter notebook
+        # can be transfered to the web
+        # please let me take of both backend and frontend
+        # by backend I mostly mean this file (main.py)
+        ####### !!!!!!!!!!!
+        df_HeartRate = cut_empty_intervals(stock_df_HeartRate)
 
+        return make_chart(x_data=df_HeartRate['x_data'], y_data=df_HeartRate['y_data'])
 
-############################ api for developers ################################
-
-
-
-
-dev_ids = {'reza': 'reza1379'}
-@app.get("/api/raw_data", response_class=JSONResponse)
-async def raw_data(session: AsyncSession = Depends(get_session), dev_id:str | None = None, user_id:str | None = None, option: str | None = None, interval: int|None = None):
-    if dev_id in dev_ids.values():
-        if option == "users":
-            query = text('''
-                SELECT USER_ID FROM users 
-            ''')
-            async with session.begin():
-                query_result = await session.execute(query)
-                res_table = [res[0] for res in query_result.fetchall()]
-            return {"users_signed_up": res_table}
-        if option == "rawusers":
-            query = text('''
-                SELECT distinct USER_ID FROM MI_BAND_ACTIVITY_SAMPLE 
-            ''')
-            async with session.begin():
-                query_result = await session.execute(query)
-                res_table = [res[0] for res in query_result.fetchall()]
-            return {'all_users': res_table}
-        if option == "heartrate":
-            maininterval = 86400
-            if user_id:
-                if interval:
-                    maininterval = interval  
-                    
-            query = text('''
-                            SELECT DISTINCT TIMESTAMP, HEART_RATE, STEPS
-                            FROM MI_BAND_ACTIVITY_SAMPLE
-                            WHERE USER_ID = :user_id
-                            AND TIMESTAMP BETWEEN (
-                                SELECT MAX(TIMESTAMP)
-                                FROM MI_BAND_ACTIVITY_SAMPLE
-                                WHERE USER_ID = :user_id
-                                ) - :interval
-                                AND (
-                                SELECT MAX(TIMESTAMP)
-                                FROM MI_BAND_ACTIVITY_SAMPLE
-                                WHERE USER_ID = :user_id
-                                );
-            ''')
-            async with session.begin():
-                query_result = await session.execute(query, params={"user_id": user_id, "interval": maininterval})
-                res_table = [res for res in query_result.fetchall()]
-
-                y_data = [x[1] for x in res_table]
-                x_data = [int(y[0]) * 1000 for y in res_table]
-                step_data = [step[2] for step in res_table]
-
-            return {"user_id": user_id, "x_data": x_data, "y_data": y_data, "step": step_data}
-    if option is None:
-        return {"error": "pls use the option query keyword, one of 'rawusers' 'users' 'heartrate' then provide the user_id in the 'user_id' query keyword -> in order to get th HR data"}
-    else:
-        return {"erros": "dev id not found"}
-@app.get("/api/help")
-def apihelp():
-    return {"help": """This is an api for developers to work with heartrate data use '/api/raw_data?dev_id='your developer id'&option=rawusers OR users OR heartrate&user_id='if the option is 'heartrate' this one should be a valid user_id existed in the rawusers the Iranina FDA approved drug api will be availible soon"""}
-
+      
 
