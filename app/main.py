@@ -441,14 +441,21 @@ async def get_chart(response: Response, beg: str | None = None, end: str | None 
         ''')
         async with session.begin():
             query_result = await session.execute(query, params={"user_id": username})
-            res_table = [res for res in query_result.fetchall()]
-        df_HeartRate = pd.DataFrame(res_table, columns=['x_data', 'y_data', 'step'])
-        df_HeartRate['x_data'] = df_HeartRate['x_data'].astype(int) * 1000
-        df_HeartRate = cut_empty_intervals(df_HeartRate)
-        sleep_score = sleepstaging(df)
-        hr_mean_1 , hr_mean_2 , hr_mean_3 , hr_mean_4 , hr_mean_5 , step_mean_1 , step_mean_2 , step_mean_3 , step_mean_4 , step_mean_5 , step_quantile , hr_quantile , step_min , hr_min = fixed_mean_calculation(df_HeartRate)
-        # return  make_chart_radar_hr(hr_mean_1 , hr_mean_2 , hr_mean_3 , hr_mean_4 , hr_mean_5 , hr_quantile , hr_min)
-        # return make_chart_radar_step(step_mean_1 , step_mean_2 , step_mean_3 , step_mean_4 , step_mean_5 , step_quantile , step_min)
+            query_res_all = query_result.fetchall()
+
+        stock_df_HeartRate = pd.DataFrame({'x_data': [int(res[0]) * 1000 for res in query_res_all],
+                                           'y_data': [res[1] for res in query_res_all],
+                                           'step': [res[2] for res in query_res_all]})
+        ##### !!!!!!!!!
+        # pls dont make changes here!
+        # the new approach includes leveraging HTMX libarary
+        # which is based on Hypermedia, this means that
+        # anything you can achive in the jupyter notebook
+        # can be transfered to the web
+        # please let me take of both backend and frontend
+        # by backend I mostly mean this file (main.py)
+        ####### !!!!!!!!!!!
+        df_HeartRate = cut_empty_intervals(stock_df_HeartRate)
 
         return make_chart(x_data=df_HeartRate['x_data'], y_data=df_HeartRate['y_data'])
 
