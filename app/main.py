@@ -152,8 +152,8 @@ async def AuthenticateuserinDatabase(
     else:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail='''
-  هنوز وارد اپلیکیشن نشده اید ، لطفا بعد از نصب اپلیکیشن و وارد کردن یوزد آیدی از اتصال اینترنت و بولوتوث بند و گوشی خود
+            detail=''' 
+  هنوز وارد اپلیکیشن نشده اید ، لطفا بعد از نصب اپلیکیشن و وارد کردن یوزد آیدی از اتصال انیترنت و بولتوث بند و گوشی خود
   اطمینان حاصل کرده وارد شوید تا به صفحه ثبت نام هدایت شوید
             ''',
             headers={"WWW-Authenticate": "Basic"}
@@ -164,7 +164,7 @@ def create_session(user_id: str) -> str:
     sessions[session_id] = user_id
     return session_id
 
-# helper function for login form data
+# helper function for login form data 
 async def form_data(username: str = Form(...), password: str = Form(...)):
     form_data = SinginForm(username=username, password=password)
     return {"username": form_data.username, "password": form_data.password}
@@ -178,7 +178,7 @@ async def login_info(response: Response, form_data: dict = Depends(form_data), s
         if not user["id"]:
             # user[id] = None is the case when the user_id is in the buid, but not in the users table
             # to have a redircet response client-side with htmx 'Hx-Redirect' should be in the header of the response from
-            # the server, otherwise the client will behave with as a normal htmx respnse and swap an element with the
+            # the server, otherwise the client will behave with as a normal htmx respnse and swap an element with the 
             # coming response
             response = Response(content="موفق", status_code=200)
             response.headers['HX-Redirect'] = f'/register/{user["username"]}'
@@ -189,11 +189,11 @@ async def login_info(response: Response, form_data: dict = Depends(form_data), s
         # Create a response object for setting a cookie
         # response = RedirectResponse(url="/users/" + user["username"], status_code=status.HTTP_302_FOUND)
         # Set the session_id in a cookie
-        response = Response(content="موفق", status_code=200)
+        response = Response(content="موقف", status_code=200)
         response.headers['HX-Redirect'] = '/users/me'
         response.set_cookie(key="session_id", value=session_id, httponly=True, max_age=3 * 3600)
         response.set_cookie(key="username", value=user["username"], httponly=True, max_age=3 * 3600)
-
+        
         return response
     except HTTPException as e:
         return f'''<p>{e}<p>'''
@@ -210,20 +210,20 @@ def getuser(request: Request, username: Annotated[str | None, Cookie()] = None, 
 async def logout(response: Response, session_id: Annotated[str | None, Cookie()]):
     # Delete the session server-side as before
     if not session_id:
-        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)    
+    
     if session_id and session_id in sessions:
         del sessions[session_id]
     # Clear the session cookie client-side
     response.delete_cookie(key="session_id")
     response.delete_cookie(key="username")
-    response_to = Response(content="موفق", status_code=200)
+    response_to = Response(content="موقف", status_code=200)
     response_to.headers['HX-Redirect'] = '/login'
     response_to.delete_cookie(key="session_id")
     response_to.delete_cookie(key="username")
 
     # return HTML content to swap an elemnt usi
-
+    
     return response_to
 # user not found
 @app.get("/notfound/{username}", response_class=HTMLResponse)
@@ -273,7 +273,7 @@ async def register_info(
     try:
         validated_form_data = RegistrationForm(**form_data,medication=drugs_dict)
         print(validated_form_data)
-
+        
     except lessValueError as e:
         return f'''<p>رمز عبور باید حداقل ۸ کاراکتر باشد</p>'''
     except sameValueError as e:
@@ -369,7 +369,7 @@ async def totaldrugperuser(randnum:int, druglist: list) -> dict:
     if randnum not in temp_drugs_per_user:
         temp_drugs_per_user[randnum] = []
     temp_drugs_per_user[randnum].append(" ".join(list(filter(lambda x: x is not None, druglist))))
-
+    
 
     return temp_drugs_per_user[randnum]
 @app.post("/api/{randomnumber}/search/{drugname}", response_class=HTMLResponse)
@@ -404,7 +404,7 @@ async def delete_drug(randomnumber: int, drugname: str):
             raise HTTPException(status_code=404, detail="Drug not found")
     else:
         raise HTTPException(status_code=404, detail="User not found")
-
+    
 
 
 ####################### CHARTS ####################
@@ -443,7 +443,7 @@ async def get_chart(response: Response, beg: str | None = None, end: str | None 
 
         y_data = [x[1] for x in res_table]
         x_data = [int(y[0]) * 1000 for y in res_table]
-
+        
         return make_chart(x_data=x_data, y_data=y_data)
 
 
@@ -458,7 +458,7 @@ async def raw_data(session: AsyncSession = Depends(get_session), dev_id:str | No
     if dev_id in dev_ids.values():
         if option == "users":
             query = text('''
-                SELECT USER_ID FROM users
+                SELECT USER_ID FROM users 
             ''')
             async with session.begin():
                 query_result = await session.execute(query)
@@ -466,7 +466,7 @@ async def raw_data(session: AsyncSession = Depends(get_session), dev_id:str | No
             return {"users_signed_up": res_table}
         if option == "rawusers":
             query = text('''
-                SELECT distinct USER_ID FROM MI_BAND_ACTIVITY_SAMPLE
+                SELECT distinct USER_ID FROM MI_BAND_ACTIVITY_SAMPLE 
             ''')
             async with session.begin():
                 query_result = await session.execute(query)
@@ -476,8 +476,8 @@ async def raw_data(session: AsyncSession = Depends(get_session), dev_id:str | No
             maininterval = 86400
             if user_id:
                 if interval:
-                    maininterval = interval
-
+                    maininterval = interval  
+                    
             query = text('''
                             SELECT DISTINCT TIMESTAMP, HEART_RATE, STEPS
                             FROM MI_BAND_ACTIVITY_SAMPLE
@@ -509,3 +509,5 @@ async def raw_data(session: AsyncSession = Depends(get_session), dev_id:str | No
 @app.get("/api/help")
 def apihelp():
     return {"help": """This is an api for developers to work with heartrate data use '/api/raw_data?dev_id='your developer id'&option=rawusers OR users OR heartrate&user_id='if the option is 'heartrate' this one should be a valid user_id existed in the rawusers the Iranina FDA approved drug api will be availible soon"""}
+
+
