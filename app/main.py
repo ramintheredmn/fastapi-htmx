@@ -36,7 +36,9 @@ async def user_info(session: AsyncSession, username: str):
         users_list_tuple = [user for user in query_result.fetchall()]
         if users_list_tuple:
             user_info = users_list_tuple[0]
-            users[username] = {'sex': user_info[0], 'name': user_info[1], 'lastname': user_info[2], 'birthdate': user_info[3], 'height': user_info[4], 'weight': user_info[5], 'medications': user_info[6], 'comorbidities': user_info[7]}
+            users[username] = {'sex': user_info[0], 'name': user_info[1], 'lastname': user_info[2],
+                               'birthdate': user_info[3], 'height': user_info[4], 'weight': user_info[5],
+                               'medications': user_info[6], 'comorbidities': user_info[7]}
             return users[username]
         else:
             return None
